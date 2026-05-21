@@ -1,136 +1,373 @@
+🚀 VedaAI — AI Powered Assessment Generation Platform
+
 <div align="center">
-  <img src="https://img.shields.io/badge/VedaAI-Assessment_Platform-6366f1?style=for-the-badge&logo=openai" alt="VedaAI Logo" />
-  <br />
-  <p>
-    <strong>A production-grade, AI-powered assessment generation tool for modern educators.</strong>
-  </p>
+
+🧠 VedaAI
+
+Production-Grade AI Assessment Creation Platform for Modern Educators
+
+Generate structured, printable, AI-powered assessments using advanced queue processing, real-time streaming, intelligent validation pipelines, and Google Gemini.
+
 </div>
 
----
+⸻
 
-## ✨ Features
+✨ Overview
 
-VedaAI is designed to streamline the assessment creation process using advanced AI. By simply providing a topic or uploading study material, VedaAI orchestrates a robust generation pipeline to deliver print-ready question papers.
+VedaAI is a full-stack AI-powered assessment generation system built for teachers, schools, universities, and educational institutions.
 
-- **🤖 Google Gemini Integration**: Leverages `gemini-2.5-flash` for high-speed, highly structured reasoning and multiple-choice generation.
-- **📄 Document Processing**: Upload PDF or TXT reference materials. The backend automatically extracts and synthesizes the content.
-- **🛡️ Ironclad Validation**: Uses `Zod` schemas and a discriminated union architecture to guarantee the AI outputs strict JSON structures (e.g. enforcing 4 options for MCQs).
-- **🔁 Autonomous Self-Correction**: The AI service automatically catches validation failures and prompts the LLM to correct its own schema formatting, retrying up to 3 times before failing gracefully.
-- **⚡ Asynchronous Queue Processing**: Powered by `BullMQ` and `Redis`. Heavy generation tasks run in background workers, preventing API timeouts and ensuring UI responsiveness.
-- **📡 Real-Time WebSockets**: Live progress tracking via `Socket.IO`. Watch as the backend parses documents, queries the AI, and formats the PDF in real-time.
-- **🖨️ High-Fidelity PDF Export**: Uses `pdf-lib` to generate beautifully formatted, student-ready, printable exam papers instantly.
-- **UI/UX**: Stunning `Next.js 14` App Router frontend with glassmorphism design, built with `Tailwind CSS`, `Zustand`, and `Lucide React`.
+The platform allows educators to:
 
----
+✅ Upload study material (PDF/TXT)
+✅ Generate structured question papers using AI
+✅ Create MCQs, Short Answers, Long Answers
+✅ Stream live generation progress in real-time
+✅ Export beautifully formatted printable PDFs
+✅ Retry, cancel, and manage generation jobs safely
 
-## 🛠 Tech Stack
+The application is designed using production-grade backend architecture patterns including:
 
-| Domain | Technologies |
-| :--- | :--- |
-| **Frontend** | Next.js 14, Zustand, Tailwind CSS, Lucide React, Axios, React Hook Form |
-| **Backend** | Node.js, Express, TypeScript, Zod, Socket.IO, pdf-lib, pdf-parse, Winston |
-| **AI Layer** | `@google/generative-ai` (Gemini SDK), Prompt Engineering |
-| **Data & Queue** | MongoDB (Mongoose), Redis, BullMQ |
+* BullMQ background workers
+* Redis queue orchestration
+* Event-driven architecture
+* WebSocket live updates
+* AI validation & retry pipelines
+* Strong schema enforcement using Zod
 
----
+⸻
 
-## 📋 Prerequisites
+🔥 Features
 
-Ensure you have the following installed on your machine:
-*   [Node.js](https://nodejs.org/) (v18.x or v20.x recommended)
-*   [MongoDB](https://www.mongodb.com/) (Running locally or hosted)
-*   [Redis](https://redis.io/) (Running locally or hosted)
+🤖 AI Powered Assessment Generation
 
----
+Powered by:
 
-## ⚙️ Environment Variables
+* Google Gemini 2.5 Flash
+* Structured Prompt Engineering
+* Zod Validation Pipelines
+* Self-Healing AI Retry Logic
 
-### Backend Configuration
-Create a `.env` file inside the `backend/` directory:
-```env
+The AI can generate:
+
+* MCQs
+* Short Answer Questions
+* Long Answer Questions
+* Section-based assessments
+* Difficulty-balanced papers
+
+⸻
+
+📄 Smart Document Processing
+
+Upload:
+
+* PDF files
+* TXT files
+
+The backend automatically:
+
+* extracts text
+* chunks large documents
+* compresses syllabus references
+* generates optimized AI prompts
+
+⸻
+
+🛡️ Strict Validation Pipeline
+
+Every AI response is:
+
+✅ Sanitized
+✅ Parsed
+✅ Validated
+✅ Repaired automatically if malformed
+
+Validation uses:
+
+* Zod schemas
+* discriminated unions
+* retry correction prompts
+
+This ensures:
+
+* valid JSON only
+* no malformed papers
+* proper MCQ structures
+* guaranteed rendering compatibility
+
+⸻
+
+⚡ Real-Time Queue System
+
+Heavy AI generation tasks run asynchronously using:
+
+* BullMQ
+* Redis
+* Worker architecture
+
+Live progress updates stream to the frontend:
+
+Queued
+→ Compressing Reference Material
+→ Generating Questions
+→ Validating JSON
+→ Formatting Paper
+→ Completed
+
+⸻
+
+📡 WebSocket Streaming
+
+Using Socket.IO, the frontend receives:
+
+* real-time progress
+* status updates
+* failure notifications
+* retry events
+* completion events
+
+without page refreshes.
+
+⸻
+
+🖨️ High Fidelity PDF Export
+
+Generated assessments can be exported instantly as:
+
+✅ printable PDFs
+✅ multi-page layouts
+✅ student-ready papers
+✅ clean typography formatting
+
+Built using:
+
+* pdf-lib
+* custom layout engine
+* print-safe spacing system
+
+⸻
+
+🧠 AI Reliability Engineering
+
+VedaAI includes several advanced AI reliability mechanisms:
+
+Feature	Purpose
+Zod Validation	Guarantees strict response structure
+Retry Pipeline	Auto-corrects malformed AI output
+JSON Sanitization	Removes markdown/code fences
+Timeout Protection	Prevents infinite generation loops
+Queue Cancellation	Terminates stuck jobs safely
+Model Fallbacks	Handles Gemini model compatibility
+Event Architecture	Decoupled processing pipeline
+
+⸻
+
+🛠️ Tech Stack
+
+Frontend
+
+* Next.js 14
+* TypeScript
+* Zustand
+* Tailwind CSS
+* Framer Motion
+* React Hook Form
+* Lucide React
+* Socket.IO Client
+
+Backend
+
+* Node.js
+* Express.js
+* TypeScript
+* BullMQ
+* Redis
+* MongoDB
+* Mongoose
+* Socket.IO
+* pdf-lib
+* pdf-parse
+* Winston Logger
+* Zod
+
+AI Layer
+
+* Google Gemini API
+* Prompt Engineering
+* Structured JSON Enforcement
+* AI Retry Self-Correction System
+
+⸻
+
+🏗️ System Architecture
+
+graph TD
+Client[Next.js Frontend]
+--> API[Express Backend API]
+API --> Mongo[(MongoDB)]
+API --> Queue[BullMQ Queue]
+Queue --> Redis[(Redis)]
+Worker[BullMQ Worker]
+--> Gemini[Google Gemini API]
+Worker --> Validator[Zod Validation]
+Worker --> Parser[JSON Sanitizer]
+Worker --> Events[Event Bus]
+Events --> Socket[Socket.IO Gateway]
+Events --> Logger[Winston Logger]
+Events --> Database[(MongoDB)]
+Socket --> Client
+
+⸻
+
+📁 Project Structure
+
+VedaAI/
+├── frontend/
+│   ├── src/
+│   │   ├── app/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── store/
+│   │   └── utils/
+│
+├── backend/
+│   ├── src/
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── listeners/
+│   │   ├── middlewares/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   │   ├── ai/
+│   │   │   ├── chunking/
+│   │   │   └── pdf/
+│   │   ├── sockets/
+│   │   └── workers/
+│
+└── README.md
+
+⸻
+
+⚙️ Environment Variables
+
+Backend (.env)
+
 PORT=4001
 MONGODB_URI=mongodb://localhost:27017/vedaai
 REDIS_URL=redis://localhost:6379
-GEMINI_API_KEY=your-gemini-api-key-here
+GEMINI_API_KEY=your_gemini_api_key
 FRONTEND_URL=http://localhost:3000
 NODE_ENV=development
-```
 
-### Frontend Configuration
-Create a `.env.local` file inside the `frontend/` directory:
-```env
+⸻
+
+Frontend (.env.local)
+
 NEXT_PUBLIC_API_URL=http://localhost:4001/api
 NEXT_PUBLIC_SOCKET_URL=http://localhost:4001
-```
 
----
+⸻
 
-## 🚀 Running the Project
+🚀 Local Development Setup
 
-### 1. Installation
-Install dependencies in both directories:
-```bash
-# Backend dependencies
+1. Install Dependencies
+
 npm install --prefix backend
-
-# Frontend dependencies
 npm install --prefix frontend
-```
 
-### 2. Databases & Broker (Local)
-Start your MongoDB and Redis servers:
-```bash
-# Start MongoDB (if using Brew on macOS)
+⸻
+
+2. Start MongoDB & Redis
+
+MongoDB
+
 brew services start mongodb-community
 
-# Start Redis (if using Brew on macOS)
+Redis
+
 brew services start redis
-```
 
-### 3. Run Development Servers
-Start both servers concurrently or in separate terminal tabs:
+⸻
 
-#### Start Backend Service
-```bash
+3. Run Backend
+
 npm run dev --prefix backend
-```
-*Runs on port **4001**.*
 
-#### Start Frontend Service
-```bash
+Runs on:
+
+http://localhost:4001
+
+⸻
+
+4. Run Frontend
+
 npm run dev --prefix frontend
-```
-*Runs on port **3000**.*
 
----
+Runs on:
 
-## 📁 Project Architecture
+http://localhost:3000
 
-```
-VedaAI/
-├── backend/
-│   ├── src/
-│   │   ├── config/          # DB, Logger, Redis configuration
-│   │   ├── controllers/     # Route controllers
-│   │   ├── listeners/       # Event-based database & websocket broadcasters
-│   │   ├── middlewares/     # Rate limiter and Zod validator middlewares
-│   │   ├── models/          # MongoDB Assignment schema
-│   │   ├── routes/          # Express API route endpoints
-│   │   ├── services/
-│   │   │   ├── ai/          # Gemini Provider, Zod Validators, Retry Loops, Parsers
-│   │   │   ├── chunking.ts  # Text chunker & summarizer
-│   │   │   └── pdf.ts       # pdf-lib layout formatter
-│   │   ├── sockets/         # Socket.IO Gateway configuration
-│   │   └── workers/         # BullMQ queue consumer with DB persistence
-│   ├── package.json
-│   └── tsconfig.json
-├── frontend/
-│   ├── src/
-│   │   ├── app/             # Next.js pages (Dashboard, Create, Details)
-│   │   ├── hooks/           # Websocket custom listener hook
-│   │   ├── store/           # Zustand stores (assignment, UI status)
-│   │   └── utils/           # Axios instance
-│   ├── package.json
-│   └── tsconfig.json
-└── README.md
-```
+⸻
+
+📡 API Endpoints
+
+Method	Endpoint	Description
+POST	/api/assignments	Create assignment
+GET	/api/assignments	Get all assignments
+GET	/api/assignments/:id	Get assignment
+DELETE	/api/assignments/:id	Delete assignment
+POST	/api/assignments/:id/regenerate	Retry generation
+POST	/api/assignments/:id/cancel	Cancel generation
+GET	/api/assignments/:id/pdf	Download PDF
+
+⸻
+
+🧪 Reliability & Failure Handling
+
+VedaAI gracefully handles:
+
+✅ malformed AI responses
+✅ invalid JSON
+✅ API quota failures
+✅ model incompatibilities
+✅ stuck generation jobs
+✅ queue retries
+✅ timeout protection
+✅ websocket recovery
+
+⸻
+
+📈 Future Improvements
+
+* Teacher answer-key mode
+* Student authentication
+* Role-based dashboards
+* AI difficulty balancing
+* Analytics & insights
+* Multi-language assessments
+* Cloud deployment pipeline
+* Assessment templates
+* OCR image extraction
+
+⸻
+
+👨‍💻 Author
+
+Navjot Kumar Singh
+
+Full Stack Developer • AI Systems Enthusiast • Backend Architecture Learner
+
+GitHub:
+https://github.com/Navjot-kr-Singh
+
+⸻
+
+⭐ Support
+
+If you like this project, consider giving it a star ⭐
+
+It helps support the project and motivates future improve
+
+ts.
+:::
