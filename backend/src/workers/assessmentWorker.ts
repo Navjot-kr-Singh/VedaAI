@@ -44,12 +44,38 @@ export const startAssessmentWorker = () => {
         variant: variant,
       });
 
-      // 4. Persistence
+      // 4. Strict Validation
+      let totalQuestions = 0;
+      let totalMarks = 0;
+      if (generatedPaper && generatedPaper.sections) {
+        for (const sec of generatedPaper.sections) {
+          totalQuestions += sec.questions.length;
+          for (const q of sec.questions) {
+            totalMarks += q.marks;
+          }
+        }
+      }
+
+      if (totalQuestions !== assignment.totalQuestions || totalMarks !== assignment.marks) {
+        throw new Error(
+          `Strict validation mismatch before saving to database: generated ${totalQuestions} questions and ${totalMarks} marks, expected ${assignment.totalQuestions} questions and ${assignment.marks} marks.`
+        );
+      }
+
+      // 5. Persistence
       assignmentEvents.emit('assignment:progress', assignmentId, 85, 'Formatting assessment details');
       
       assignment.generatedPaper = generatedPaper;
       assignment.status = 'completed';
       await assignment.save();
+
+      // Invalidate Redis cache after completion
+      try {
+        await redisConnection.del(`assignment:${assignmentId}`);
+        logger.info(`[Worker] Invalidated Redis cache for assignment ${assignmentId} after completion`);
+      } catch (cacheErr) {
+        logger.warn(`[Worker] Failed to invalidate Redis cache for assignment ${assignmentId}: ${cacheErr}`);
+      }
 
       const duration = Date.now() - startTime;
       assignmentEvents.emit('assignment:completed', assignmentId, duration);
@@ -73,8 +99,12 @@ export const startAssessmentWorker = () => {
           status: 'failed',
           errorMessage: err.message
         });
+
+        // Invalidate cache on failure
+        await redisConnection.del(`assignment:${assignmentId}`);
+        logger.info(`[Worker] Invalidated Redis cache for assignment ${assignmentId} after failure`);
       } catch (dbErr: any) {
-        logger.error(`Failed to update Assignment ${assignmentId} to failed status: ${dbErr.message}`);
+        logger.error(`Failed to update Assignment ${assignmentId} to failed status or invalidate cache: ${dbErr.message}`);
       }
     }
   });

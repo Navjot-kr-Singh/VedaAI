@@ -21,6 +21,7 @@ import {
   TrendingDown,
   TrendingUp,
   ListTodo,
+  CheckCircle,
 } from 'lucide-react';
 
 export default function AssignmentDetails() {
@@ -67,6 +68,18 @@ export default function AssignmentDetails() {
   const isGenerating = ['queued', 'processing', 'generating'].includes(status || '');
   const isFailed = status === 'failed';
   const isFinished = status === 'completed';
+
+  // Count questions and marks from actual generated paper
+  let generatedQuestionCount = 0;
+  let generatedTotalMarks = 0;
+  if (currentAssignment?.generatedPaper?.sections) {
+    for (const sec of currentAssignment.generatedPaper.sections) {
+      generatedQuestionCount += sec.questions.length;
+      for (const q of sec.questions) {
+        generatedTotalMarks += q.marks;
+      }
+    }
+  }
 
   // Helper to color difficulty badges in UI
   const getDifficultyColor = (diff: string) => {
@@ -292,6 +305,40 @@ export default function AssignmentDetails() {
             <div className="h-4 bg-white/10 rounded w-1/4" />
             <div className="h-3 bg-white/10 rounded w-full" />
             <div className="h-3 bg-white/10 rounded w-5/6" />
+          </div>
+        </div>
+      )}
+
+      {/* Validation Banner (Hidden on Print) */}
+      {isFinished && (
+        <div className="glass-card p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 border-emerald-500/20 bg-emerald-500/5 no-print">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg">
+              <CheckCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                Verification Successful
+                <span className="bg-emerald-500/15 text-emerald-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/20 uppercase tracking-wide">
+                  AI Verified
+                </span>
+              </h4>
+              <p className="text-xs text-gray-400 mt-0.5">
+                The generated paper exactly matches the requested specifications.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-6 text-xs text-gray-300 pr-2">
+            <div className="space-y-0.5">
+              <span className="text-gray-500 block text-[10px] font-bold uppercase tracking-wider">Questions</span>
+              <span className="font-semibold text-white">{generatedQuestionCount} / {currentAssignment.totalQuestions}</span>
+            </div>
+            <div className="h-6 w-px bg-white/10" />
+            <div className="space-y-0.5">
+              <span className="text-gray-500 block text-[10px] font-bold uppercase tracking-wider">Total Marks</span>
+              <span className="font-semibold text-white">{generatedTotalMarks} / {currentAssignment.marks}</span>
+            </div>
           </div>
         </div>
       )}

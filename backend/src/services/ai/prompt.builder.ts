@@ -80,6 +80,11 @@ ${questionTypes.length === 1 && questionTypes[0] === 'MCQ' ? 'CRITICAL: You MUST
 ${instructions ? `Additional Rules: ${instructions}` : ''}
 ${variantInstructions}
 
+IMPORTANT:
+You MUST generate EXACTLY ${totalQuestions} questions.
+Do NOT generate more or fewer questions.
+The final output MUST contain exactly ${marks} marks total.
+
 ${referenceText ? `REFERENCE STUDY MATERIAL:
 ---
 ${referenceText}

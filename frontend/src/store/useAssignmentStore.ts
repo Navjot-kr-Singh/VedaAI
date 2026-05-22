@@ -83,11 +83,26 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
   },
 
   fetchAssignmentById: async (id) => {
-    set({ loading: true, error: null });
+    const current = get().currentAssignment;
+    const isGenerating = current && current._id === id && ['queued', 'processing', 'generating'].includes(current.status);
+
+    if (!isGenerating) {
+      set({ loading: true, error: null });
+    }
     try {
       const response = await api.get(`/assignments/${id}`);
       const assignment = response.data.data;
-      set({ currentAssignment: assignment, loading: false });
+      
+      console.log(`[Zustand] fetchAssignmentById success for ID: ${id}, status: ${assignment.status}`);
+      
+      set((state) => {
+        const assignments = state.assignments.map((a) => (a._id === id ? assignment : a));
+        return {
+          currentAssignment: assignment,
+          assignments,
+          loading: false,
+        };
+      });
       return assignment;
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Error fetching assignment details';
@@ -221,6 +236,7 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
 
   updateAssignmentProgress: (assignmentId, update) => {
     set((state) => {
+      console.log(`[Zustand] updateAssignmentProgress for ${assignmentId}:`, update);
       // Update individual progress tracking dictionary
       const updatedProgress = {
         ...state.progressUpdates,
@@ -229,13 +245,23 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
 
       // Also update the status inside the assignments list
       const updatedAssignments = state.assignments.map((a) =>
-        a._id === assignmentId ? { ...a, status: update.status } : a
+        a._id === assignmentId
+          ? {
+              ...a,
+              status: update.status,
+              errorMessage: update.status === 'failed' ? update.message : a.errorMessage,
+            }
+          : a
       );
 
       // And update the currentAssignment if it's currently open
       let updatedCurrent = state.currentAssignment;
       if (updatedCurrent && updatedCurrent._id === assignmentId) {
-        updatedCurrent = { ...updatedCurrent, status: update.status };
+        updatedCurrent = {
+          ...updatedCurrent,
+          status: update.status,
+          errorMessage: update.status === 'failed' ? update.message : updatedCurrent.errorMessage,
+        };
       }
 
       return {
