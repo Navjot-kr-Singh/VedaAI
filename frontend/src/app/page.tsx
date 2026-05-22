@@ -322,7 +322,7 @@ export default function Dashboard() {
                         <ArrowRight className="w-4 h-4" />
                       </Link>
                       <a
-                        href={`http://localhost:4001/api/assignments/${assignment._id}/pdf`}
+                        href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/assignments/${assignment._id}/pdf`}
                         download
                         className="p-2.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-xl border border-white/5 transition-all"
                         title="Download PDF"

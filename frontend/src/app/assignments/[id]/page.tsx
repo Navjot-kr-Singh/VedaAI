@@ -206,7 +206,7 @@ export default function AssignmentDetails() {
             </button>
 
             <a
-              href={`http://localhost:4001/api/assignments/${currentAssignment._id}/pdf`}
+              href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/assignments/${currentAssignment._id}/pdf`}
               download
               className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-violet-500/15"
             >
