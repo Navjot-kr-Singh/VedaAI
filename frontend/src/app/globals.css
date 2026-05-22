@@ -4,64 +4,63 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 5%;
-    --card-border: 240 5.9% 15%;
-    --accent: 263.4 70% 50.4%;
+    --background: 0 0% 96.5%; /* #f6f6f6 */
+    --foreground: 0 0% 9.4%;  /* #181818 */
+    --card: 0 0% 100%;       /* #ffffff */
+    --card-border: 0 0% 91.8%; /* #eaeaea */
+    --accent: 17.6 84.1% 57.5%; /* #ed6c37 */
+    --accent-soft: 17.3 75% 91.2%; /* #fae0d6 */
   }
 
   body {
-    background-color: rgb(10, 10, 12);
-    color: rgb(243, 244, 246);
+    background-color: #f6f6f6;
+    color: #181818;
     font-family: var(--font-sans), sans-serif;
   }
 }
 
-/* Glassmorphism Classes */
+/* Glassmorphism/Card Panels - light mode equivalent */
 .glass-panel {
-  background: rgba(18, 18, 24, 0.7);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .glass-card {
-  background: rgba(30, 30, 40, 0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
+  background: #ffffff;
+  border: 1px solid #eaeaea;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
 }
 
 .glass-card:hover {
-  background: rgba(35, 35, 50, 0.6);
-  border-color: rgba(139, 92, 246, 0.3);
-  box-shadow: 0 8px 30px rgba(139, 92, 246, 0.1);
+  border-color: #ed6c37;
+  box-shadow: 0 4px 20px rgba(237, 108, 55, 0.08);
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar in light mode */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(10, 10, 12, 0.5);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.3);
+  background: rgba(237, 108, 55, 0.2);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.6);
+  background: rgba(237, 108, 55, 0.5);
 }
 
-/* Pulsing loader */
+/* Pulsing loader for light mode */
 .skeleton-pulse {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.03) 25%, rgba(0, 0, 0, 0.08) 50%, rgba(0, 0, 0, 0.03) 75%);
   background-size: 200% 100%;
   animation: loading-pulse 1.5s infinite;
 }
@@ -73,6 +72,18 @@
   100% {
     background-position: -200% 0;
   }
+}
+
+/* Custom inputs for light mode */
+input, select, textarea {
+  background-color: #ffffff !important;
+  color: #181818 !important;
+  border-color: #eaeaea !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #ed6c37 !important;
+  outline: none;
 }
 
 /* Print CSS Configurations */
