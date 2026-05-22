@@ -13,15 +13,12 @@ export const CreateAssignmentSchema = z.object({
     ),
     marks: z.preprocess(
       (val) => Number(val),
-      z.number({ required_error: 'Total marks is required' }).int().positive('Must be a positive integer')
+      z.number({ required_error: 'Total marks is required' }).positive('Must be a positive number')
     ),
     difficulty: z.enum(['Easy', 'Medium', 'Hard'], {
       required_error: 'Difficulty is required',
     }),
     instructions: z.string().optional().default(''),
-  }).refine((data) => data.marks >= data.totalQuestions, {
-    message: 'Total marks must be greater than or equal to the total number of questions',
-    path: ['marks'],
   }),
 });
 

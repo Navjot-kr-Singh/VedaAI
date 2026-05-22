@@ -88,6 +88,7 @@ export default function AssignmentDetails() {
       }
     }
   }
+  generatedTotalMarks = Math.round(generatedTotalMarks * 100) / 100;
 
   // Helper to color difficulty badges in UI
   const getDifficultyColor = (diff: string) => {

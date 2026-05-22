@@ -47,6 +47,7 @@ Guidelines for questions:
     difficulty: 'Easy' | 'Medium' | 'Hard';
     instructions?: string;
     referenceText?: string;
+    syllabusSummary?: { course: string; topics: string[] };
     variant?: RegenerationVariant;
   }): string {
     const {
@@ -57,6 +58,7 @@ Guidelines for questions:
       difficulty,
       instructions,
       referenceText,
+      syllabusSummary,
       variant = 'default',
     } = params;
 
@@ -67,6 +69,37 @@ Guidelines for questions:
       variantInstructions = `- VARIANT MODIFIER: Make this assessment paper noticeably MORE CHALLENGING than a standard ${difficulty} difficulty paper. Include deep conceptual questions.`;
     } else if (variant === 'mcq_only') {
       variantInstructions = `- VARIANT MODIFIER: Format ALL questions across ALL sections as Multiple Choice Questions (MCQ). Each question must have the type "MCQ" and include exactly 4 choices in the "options" array.`;
+    }
+
+    let syllabusContent = '';
+    if (syllabusSummary && syllabusSummary.topics.length > 0) {
+      syllabusContent = `EXTRACTED SYLLABUS SUMMARY:
+Course Name: ${syllabusSummary.course}
+Topics / Units / Concepts to cover:
+${syllabusSummary.topics.map((t, idx) => `- ${t}`).join('\n')}
+
+CRITICAL SYLLABUS ADHERENCE RULES:
+1. You MUST generate questions that are derived STRICTLY and EXCLUSIVELY from the EXTRACTED SYLLABUS SUMMARY topics listed above.
+2. NEVER invent unrelated technical concepts, historical figures, facts, or terms not explicitly mentioned in the syllabus summary.
+3. NEVER use placeholder terminology or generic system/performance/architecture questions (e.g. do NOT use general IT terms like "primary controller", "modular architecture", "performance optimization" unless they are explicitly present in the syllabus topics).
+4. Every single question generated MUST map directly to a syllabus topic/concept.
+5. If a question cannot be directly traced to the syllabus content, DO NOT generate it.
+6. Cover the listed topics/units evenly. Avoid focusing the entire paper on a single repeated topic.
+7. Avoid any duplication or semantic repetition of questions or options.`;
+    } else if (referenceText) {
+      syllabusContent = `REFERENCE STUDY MATERIAL (SYLLABUS EXCERPTS):
+---
+${referenceText}
+---
+
+CRITICAL SYLLABUS ADHERENCE RULES:
+1. You MUST generate questions that are derived STRICTLY and EXCLUSIVELY from the REFERENCE STUDY MATERIAL provided above.
+2. DO NOT use pre-trained general knowledge, external sources, or assumptions to introduce topics, concepts, historical figures, facts, or technical terms not explicitly mentioned in the reference study material.
+3. If a topic is not present in the provided reference study material, you MUST NOT generate questions about it, even if the assignment title or instructions hint at it. Skip any unsupported topics and ensure proportional topic coverage of ONLY the concepts that actually exist within the reference study material.
+4. Forbid any hallucination of external curriculum or general knowledge.
+5. If a question cannot be directly traced to the syllabus content, DO NOT generate it.`;
+    } else {
+      syllabusContent = 'Generate standard curriculum questions since no reference study material was uploaded.';
     }
 
     return `Generate an assessment paper based on the following specifications:
@@ -85,10 +118,7 @@ You MUST generate EXACTLY ${totalQuestions} questions.
 Do NOT generate more or fewer questions.
 The final output MUST contain exactly ${marks} marks total.
 
-${referenceText ? `REFERENCE STUDY MATERIAL:
----
-${referenceText}
----` : 'Generate standard curriculum questions since no reference study material was uploaded.'}
+${syllabusContent}
 
 Ensure that the sum of 'marks' for all questions equals exactly ${marks}, and the count of questions is exactly ${totalQuestions}.
 `;

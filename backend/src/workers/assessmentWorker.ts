@@ -28,10 +28,20 @@ export const startAssessmentWorker = () => {
 
       // 2. Prepare Reference Material with optional Chunking
       let referenceText = '';
+      let syllabusSummary: { course: string; topics: string[] } | undefined = undefined;
       if (assignment.uploadedFile?.parsedText) {
-        assignmentEvents.emit('assignment:progress', assignmentId, 20, 'Compressing reference text');
-        referenceText = await chunkingService.processText(assignment.uploadedFile.parsedText);
-        assignmentEvents.emit('assignment:progress', assignmentId, 35, 'Reference material prepared');
+        assignmentEvents.emit('assignment:progress', assignmentId, 20, 'Processing syllabus reference material');
+        const query = `${assignment.title} ${assignment.instructions || ''}`;
+        referenceText = await chunkingService.processText(assignment.uploadedFile.parsedText, query);
+        
+        try {
+          assignmentEvents.emit('assignment:progress', assignmentId, 25, 'Extracting syllabus topics');
+          syllabusSummary = await aiService.extractSyllabusSummary(assignment.uploadedFile.parsedText);
+        } catch (err: any) {
+          logger.warn(`[Worker] Syllabus summary extraction failed: ${err.message}`);
+        }
+        
+        assignmentEvents.emit('assignment:progress', assignmentId, 35, 'Syllabus reference material prepared');
       }
 
       // Check cancellation state again
@@ -53,6 +63,7 @@ export const startAssessmentWorker = () => {
         instructions: assignment.instructions,
         referenceText: referenceText || undefined,
         variant: variant,
+        syllabusSummary: syllabusSummary,
       });
 
       // 4. Strict Validation
@@ -67,9 +78,12 @@ export const startAssessmentWorker = () => {
         }
       }
 
-      if (totalQuestions !== assignment.totalQuestions || totalMarks !== assignment.marks) {
+      const roundedTotalMarks = Math.round(totalMarks * 100) / 100;
+      const expectedMarks = Math.round(assignment.marks * 100) / 100;
+
+      if (totalQuestions !== assignment.totalQuestions || roundedTotalMarks !== expectedMarks) {
         throw new Error(
-          `Strict validation mismatch before saving to database: generated ${totalQuestions} questions and ${totalMarks} marks, expected ${assignment.totalQuestions} questions and ${assignment.marks} marks.`
+          `Strict validation mismatch before saving to database: generated ${totalQuestions} questions and ${roundedTotalMarks} marks, expected ${assignment.totalQuestions} questions and ${expectedMarks} marks.`
         );
       }
 

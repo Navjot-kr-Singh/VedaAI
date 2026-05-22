@@ -10,7 +10,7 @@ export type RegenerationVariant = 'default' | 'easier' | 'harder' | 'mcq_only';
 const BaseQuestionSchema = z.object({
   text: z.string().min(3, 'Question text must be at least 3 characters long'),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
-  marks: z.number().int().positive('Marks must be a positive integer'),
+  marks: z.number().positive('Marks must be a positive number'),
 });
 
 const MCQSchema = BaseQuestionSchema.extend({

@@ -93,7 +93,7 @@ export function normalizeAssessment(
         text: typeof q?.text === 'string' && q.text.trim().length >= 3 ? q.text : `Question details on topic (Question ${flatQuestions.length + 1})`,
         type: questionType,
         difficulty: typeof q?.difficulty === 'string' && ['Easy', 'Medium', 'Hard'].includes(q.difficulty) ? q.difficulty : difficulty,
-        marks: typeof q?.marks === 'number' && q.marks > 0 ? Math.floor(q.marks) : 1,
+        marks: typeof q?.marks === 'number' && q.marks > 0 ? q.marks : 1,
       };
 
       if (cleanedQ.type === 'MCQ') {
@@ -160,38 +160,43 @@ export function normalizeAssessment(
     }
   }
 
-  // 3. Rebalance Marks (Largest Remainder Method)
+  // 3. Rebalance Marks (Decimal-safe Scaling and Cents Adjustment Method)
   const N = flatQuestions.length;
   if (N > 0) {
-    const assignedMarks = new Array(N).fill(1);
-    let remainingMarks = requestedTotalMarks - N;
+    const originalMarks = flatQuestions.map((fq) => fq.question.marks || 1);
+    const sumOriginalMarks = originalMarks.reduce((sum, m) => sum + m, 0) || N;
 
-    if (remainingMarks > 0) {
-      const originalMarks = flatQuestions.map((fq) => fq.question.marks || 1);
-      const sumOriginalMarks = originalMarks.reduce((sum, m) => sum + m, 0);
+    // Scale proportionally
+    const scale = requestedTotalMarks / sumOriginalMarks;
+    const assignedMarks = originalMarks.map((m) => {
+      const scaled = m * scale;
+      // Round to 2 decimal places for clean marks, ensuring at least 0.01
+      return Math.max(0.01, Math.round(scaled * 100) / 100);
+    });
 
-      const fractionalParts = originalMarks.map((m, idx) => {
-        const prop = (m / (sumOriginalMarks || 1)) * remainingMarks;
-        const floor = Math.floor(prop);
-        assignedMarks[idx] += floor;
-        return {
-          idx,
-          frac: prop - floor,
-        };
-      });
+    // Calculate difference due to rounding
+    let currentSum = assignedMarks.reduce((sum, m) => sum + m, 0);
+    let diffCents = Math.round((requestedTotalMarks - currentSum) * 100);
 
-      const currentSum = assignedMarks.reduce((sum, m) => sum + m, 0);
-      const diff = requestedTotalMarks - currentSum;
-
-      if (diff > 0) {
-        fractionalParts.sort((a, b) => b.frac - a.frac);
-        for (let i = 0; i < diff; i++) {
-          const targetIdx = fractionalParts[i % N].idx;
-          assignedMarks[targetIdx] += 1;
-        }
+    if (diffCents > 0) {
+      // Distribute remaining cents
+      for (let i = 0; i < diffCents; i++) {
+        assignedMarks[i % N] = Math.round((assignedMarks[i % N] + 0.01) * 100) / 100;
       }
-    } else if (remainingMarks < 0) {
-      logger.warn(`[Normalization] Target marks (${requestedTotalMarks}) is less than total questions (${N}). Setting all question marks to 1.`);
+    } else if (diffCents < 0) {
+      // Subtract cents, ensuring we don't go below 0.01
+      let centsToRemove = Math.abs(diffCents);
+      let attempts = 0;
+      let i = 0;
+      while (centsToRemove > 0 && attempts < N * 2) {
+        const idx = i % N;
+        if (assignedMarks[idx] > 0.01) {
+          assignedMarks[idx] = Math.round((assignedMarks[idx] - 0.01) * 100) / 100;
+          centsToRemove--;
+        }
+        i++;
+        attempts++;
+      }
     }
 
     flatQuestions.forEach((fq, idx) => {

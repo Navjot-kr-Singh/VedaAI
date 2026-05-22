@@ -23,7 +23,16 @@ export class AssignmentController {
         logger.info(`Extracting text from uploaded file: ${req.file.originalname} (${req.file.mimetype})`);
         try {
           if (req.file.mimetype === 'application/pdf') {
-            const data = await pdfParse(req.file.buffer);
+            // Safe parsing with 25 pages max limit and 15 seconds timeout
+            const parsePdfWithTimeout = (buffer: Buffer, timeoutMs: number = 15000): Promise<any> => {
+              return Promise.race([
+                pdfParse(buffer, { max: 25 }),
+                new Promise((_, reject) =>
+                  setTimeout(() => reject(new Error('PDF parsing timed out. The file may be too complex or large.')), timeoutMs)
+                )
+              ]);
+            };
+            const data = await parsePdfWithTimeout(req.file.buffer);
             parsedText = data.text;
           } else {
             parsedText = req.file.buffer.toString('utf-8');
@@ -40,9 +49,14 @@ export class AssignmentController {
             parsedText: parsedText,
           };
           logger.info(`Text extraction successful. Total characters: ${parsedText.length}`);
-        } catch (fileErr) {
-          logger.error(`Failed to parse file upload: ${fileErr}`);
-          res.status(400).json({ success: false, message: 'Failed to process uploaded file' });
+        } catch (fileErr: any) {
+          logger.error(`Failed to parse file upload: ${fileErr.message || fileErr}`);
+          res.status(400).json({ 
+            success: false, 
+            message: fileErr.message && fileErr.message.includes('timed out') 
+              ? 'PDF parsing timed out. Please upload a shorter or less complex file.' 
+              : 'Failed to process uploaded file. Please make sure the PDF is not corrupted.' 
+          });
           return;
         }
       }

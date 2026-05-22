@@ -26,12 +26,9 @@ const CreateAssignmentSchema = z.object({
   dueDate: z.string().min(1, 'Due date is required'),
   questionTypes: z.array(z.string()).min(1, 'Select at least one question format'),
   totalQuestions: z.number().int().positive('Must be a positive integer').min(1, 'Min 1 question required'),
-  marks: z.number().int().positive('Must be a positive integer').min(1, 'Min 1 mark required'),
+  marks: z.number().positive('Must be a positive number').min(0.1, 'Min 0.1 marks required'),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
   instructions: z.string().optional().default(''),
-}).refine((data) => data.marks >= data.totalQuestions, {
-  message: 'Total marks must be greater than or equal to the total questions count',
-  path: ['marks'],
 });
 
 type FormData = z.infer<typeof CreateAssignmentSchema>;
@@ -292,6 +289,7 @@ export default function CreateAssignment() {
                 <label className="text-sm font-semibold text-gray-300">Total Marks</label>
                 <input
                   type="number"
+                  step="any"
                   placeholder="e.g. 50"
                   {...register('marks', { valueAsNumber: true })}
                   className={`w-full px-4 py-3 bg-[#121216] border rounded-xl text-sm text-gray-300 focus:outline-none ${
