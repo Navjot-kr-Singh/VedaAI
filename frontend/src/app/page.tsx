@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 export default function Dashboard() {
-  const { assignments, loading, fetchAssignments, deleteAssignment, regenerateAssignment, progressUpdates } =
+  const { assignments, loading, fetchAssignments, deleteAssignment, regenerateAssignment, cancelAssignment, progressUpdates } =
     useAssignmentStore();
   const addToast = useUIStore((state) => state.addToast);
 
@@ -33,6 +33,24 @@ export default function Dashboard() {
   useEffect(() => {
     fetchAssignments(searchTerm, statusFilter);
   }, [searchTerm, statusFilter, fetchAssignments]);
+
+  // Dashboard-wide polling fallback for active generations
+  useEffect(() => {
+    const hasGenerating = assignments.some((a) =>
+      ['queued', 'processing', 'generating'].includes(a.status)
+    );
+
+    if (!hasGenerating) return;
+
+    console.log('[Dashboard Polling] Active generation detected, starting 4s poll...');
+    const interval = setInterval(() => {
+      fetchAssignments(searchTerm, statusFilter);
+    }, 4000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [assignments, searchTerm, statusFilter, fetchAssignments]);
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -48,12 +66,19 @@ export default function Dashboard() {
     await regenerateAssignment(id, 'default');
   };
 
+  const handleCancel = async (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (confirm('Are you sure you want to cancel the AI generation for this assessment?')) {
+      await cancelAssignment(id);
+    }
+  };
+
   // Status Badge Helper
   const renderStatusBadge = (assignment: IAssignment) => {
     const liveProgress = progressUpdates[assignment._id];
     const status = liveProgress?.status || assignment.status;
     const progressPercent = liveProgress?.progress || (status === 'completed' ? 100 : 0);
-    const message = liveProgress?.message || '';
 
     switch (status) {
       case 'completed':
@@ -61,6 +86,13 @@ export default function Dashboard() {
           <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <CheckCircle className="w-3.5 h-3.5" />
             Completed
+          </span>
+        );
+      case 'cancelled':
+        return (
+          <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Cancelled
           </span>
         );
       case 'failed':
@@ -168,6 +200,7 @@ export default function Dashboard() {
               <option value="generating">Generating</option>
               <option value="queued">Queued</option>
               <option value="failed">Failed</option>
+              <option value="cancelled">Cancelled</option>
             </select>
           </div>
         </div>
@@ -215,7 +248,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {assignments.map((assignment) => {
             const isFinished = assignment.status === 'completed';
-            const isFailed = assignment.status === 'failed';
+            const isFailed = assignment.status === 'failed' || assignment.status === 'cancelled';
             const isGenerating = ['queued', 'processing', 'generating'].includes(assignment.status);
             
             return (
@@ -306,8 +339,15 @@ export default function Dashboard() {
                       <RotateCw className="w-4 h-4" />
                       Retry Generation
                     </button>
+                  ) : isGenerating ? (
+                    <button
+                      onClick={(e) => handleCancel(assignment._id, e)}
+                      className="w-full flex items-center justify-center gap-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                    >
+                      Cancel Generation
+                    </button>
                   ) : (
-                    // Spinner for generating status
+                    // Spinner for other/queued status
                     <div className="w-full flex items-center justify-center gap-2 bg-white/5 text-gray-500 py-2.5 rounded-xl text-sm font-medium border border-transparent">
                       <span className="text-xs">Generating layout...</span>
                     </div>

@@ -46,9 +46,10 @@ export class PDFService {
       fontSize: number,
       font: any,
       lineHeight = 16,
-      indent = 0
+      indent = 0,
+      rightPadding = 0
     ) => {
-      const maxWidth = pageWidth - (margin * 2) - indent;
+      const maxWidth = pageWidth - (margin * 2) - indent - rightPadding;
       const words = text.split(' ');
       let currentLine = '';
       const lines: string[] = [];
@@ -128,11 +129,56 @@ export class PDFService {
         let qIndex = 1;
         for (const q of section.questions) {
           y -= 5;
-          // Format question header with indices and marks
           const questionText = `${qIndex}. ${q.text}`;
           const marksLabel = `[${q.marks} Marks]`;
           
-          checkPageBreak(25);
+          // Estimate height needed for this question + its options to prevent awkward splitting
+          const getEstimatedHeight = () => {
+            const qWidth = pageWidth - (margin * 2) - 10 - 60; // indent=10, rightPadding=60
+            const words = questionText.split(' ');
+            let currentLine = '';
+            let linesCount = 0;
+            for (const word of words) {
+              const testLine = currentLine ? `${currentLine} ${word}` : word;
+              const width = fontRegular.widthOfTextAtSize(testLine, 10);
+              if (width < qWidth) {
+                currentLine = testLine;
+              } else {
+                linesCount++;
+                currentLine = word;
+              }
+            }
+            if (currentLine) linesCount++;
+            
+            let totalHeight = linesCount * 15;
+            
+            if (q.type === 'MCQ' && q.options && q.options.length > 0) {
+              totalHeight += 5;
+              for (const opt of q.options) {
+                const optText = `A.  ${opt}`;
+                const optWidth = pageWidth - (margin * 2) - 30;
+                const optWords = optText.split(' ');
+                let optCurrentLine = '';
+                let optLinesCount = 0;
+                for (const word of optWords) {
+                  const testLine = optCurrentLine ? `${optCurrentLine} ${word}` : word;
+                  const width = fontRegular.widthOfTextAtSize(testLine, 10);
+                  if (width < optWidth) {
+                    optCurrentLine = testLine;
+                  } else {
+                    optLinesCount++;
+                    optCurrentLine = word;
+                  }
+                }
+                if (optCurrentLine) optLinesCount++;
+                totalHeight += optLinesCount * 15;
+              }
+            }
+            return totalHeight + 15;
+          };
+
+          const neededHeight = getEstimatedHeight();
+          checkPageBreak(neededHeight);
           
           // Draw marks label right-aligned
           const labelWidth = fontItalic.widthOfTextAtSize(marksLabel, 9);
@@ -145,7 +191,7 @@ export class PDFService {
           });
 
           // Draw question text (left-aligned, with right padding to avoid overlapping the marks label)
-          drawText(questionText, 10, fontRegular, 15, 10);
+          drawText(questionText, 10, fontRegular, 15, 10, 60);
           
           // Draw MCQ options if present
           if (q.type === 'MCQ' && q.options && q.options.length > 0) {

@@ -19,6 +19,9 @@ export const CreateAssignmentSchema = z.object({
       required_error: 'Difficulty is required',
     }),
     instructions: z.string().optional().default(''),
+  }).refine((data) => data.marks >= data.totalQuestions, {
+    message: 'Total marks must be greater than or equal to the total number of questions',
+    path: ['marks'],
   }),
 });
 

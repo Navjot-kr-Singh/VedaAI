@@ -8,6 +8,8 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4001'
 // Shared socket singleton instance to survive component remounts and React StrictMode
 let sharedSocket: Socket | null = null;
 let activeHookCount = 0;
+let disconnectTimeout: NodeJS.Timeout | null = null;
+let lastErrorToastTime = 0;
 
 const getSharedSocket = () => {
   if (!sharedSocket) {
@@ -40,6 +42,11 @@ export const useSocket = (activeAssignmentId?: string) => {
 
   // 1. WebSocket Event Listeners
   useEffect(() => {
+    if (disconnectTimeout) {
+      clearTimeout(disconnectTimeout);
+      disconnectTimeout = null;
+    }
+
     const socket = getSharedSocket();
     socketRef.current = socket;
     activeHookCount++;
@@ -68,6 +75,11 @@ export const useSocket = (activeAssignmentId?: string) => {
 
     const onConnectError = (err: any) => {
       console.error('[Websocket] Connection error:', err);
+      const now = Date.now();
+      if (now - lastErrorToastTime > 15000) {
+        addToast('Real-time connection offline. Using polling fallback.', 'info');
+        lastErrorToastTime = now;
+      }
     };
 
     const onStatus = (data: { status: any; progress: number; message: string }) => {
@@ -83,6 +95,10 @@ export const useSocket = (activeAssignmentId?: string) => {
           console.log(`[Websocket] Generation failed for ${activeAssignmentId}. Re-fetching details...`);
           fetchAssignmentById(activeAssignmentId);
           addToast(`AI Generation Failed: ${data.message}`, 'error');
+        } else if (data.status === 'cancelled') {
+          console.log(`[Websocket] Generation cancelled for ${activeAssignmentId}. Re-fetching details...`);
+          fetchAssignmentById(activeAssignmentId);
+          addToast('AI Generation Cancelled', 'warning');
         }
       }
     };
@@ -92,10 +108,13 @@ export const useSocket = (activeAssignmentId?: string) => {
       updateAssignmentProgress(data.assignmentId, data);
 
       if (data.status === 'completed') {
-        addToast(`Paper "${data.assignmentId.substring(0, 8)}" generation complete!`, 'success');
+        addToast(`Paper generation complete!`, 'success');
         fetchAssignments();
       } else if (data.status === 'failed') {
         addToast(`Paper generation failed: ${data.message}`, 'error');
+        fetchAssignments();
+      } else if (data.status === 'cancelled') {
+        addToast('Paper generation cancelled', 'info');
         fetchAssignments();
       }
     };
@@ -118,9 +137,14 @@ export const useSocket = (activeAssignmentId?: string) => {
 
       activeHookCount--;
       if (activeHookCount <= 0 && sharedSocket) {
-        console.log('[Websocket] No active hooks. Disconnecting shared socket connection.');
-        sharedSocket.disconnect();
-        sharedSocket = null;
+        if (disconnectTimeout) clearTimeout(disconnectTimeout);
+        disconnectTimeout = setTimeout(() => {
+          if (activeHookCount <= 0 && sharedSocket) {
+            console.log('[Websocket] No active hooks. Disconnecting shared socket connection.');
+            sharedSocket.disconnect();
+            sharedSocket = null;
+          }
+        }, 3000);
       }
     };
   }, [activeAssignmentId, updateAssignmentProgress, fetchAssignmentById, fetchAssignments, addToast]);

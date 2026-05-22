@@ -33,6 +33,7 @@ export default function AssignmentDetails() {
     loading,
     fetchAssignmentById,
     regenerateAssignment,
+    cancelAssignment,
     progressUpdates,
     clearCurrentAssignment,
   } = useAssignmentStore();
@@ -59,6 +60,12 @@ export default function AssignmentDetails() {
     await regenerateAssignment(id, variant);
   };
 
+  const handleCancel = async () => {
+    if (confirm('Are you sure you want to cancel the AI generation for this assessment?')) {
+      await cancelAssignment(id);
+    }
+  };
+
   // Extract real-time WebSocket progress
   const liveProgress = progressUpdates[id];
   const status = liveProgress?.status || currentAssignment?.status;
@@ -67,6 +74,7 @@ export default function AssignmentDetails() {
 
   const isGenerating = ['queued', 'processing', 'generating'].includes(status || '');
   const isFailed = status === 'failed';
+  const isCancelled = status === 'cancelled';
   const isFinished = status === 'completed';
 
   // Count questions and marks from actual generated paper
@@ -249,17 +257,58 @@ export default function AssignmentDetails() {
           </div>
 
           {/* Progress Bar */}
-          <div className="max-w-md mx-auto space-y-2">
-            <div className="w-full bg-white/5 rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-violet-600 to-indigo-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${progressPercent}%` }}
-              />
+          <div className="max-w-md mx-auto space-y-4">
+            <div className="space-y-2">
+              <div className="w-full bg-white/5 rounded-full h-2">
+                <div
+                  className="bg-gradient-to-r from-violet-600 to-indigo-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 px-1">
+                <span>{progressMsg || 'Processing...'}</span>
+                <span>{progressPercent}%</span>
+              </div>
             </div>
-            <div className="flex justify-between text-xs text-gray-500 px-1">
-              <span>{progressMsg || 'Processing...'}</span>
-              <span>{progressPercent}%</span>
-            </div>
+
+            <button
+              onClick={handleCancel}
+              className="flex items-center justify-center gap-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors mx-auto"
+            >
+              Cancel Generation
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Cancelled Box */}
+      {isCancelled && (
+        <div className="glass-card rounded-2xl p-8 lg:p-12 text-center space-y-6 no-print border-amber-500/20 bg-amber-950/5">
+          <div className="p-4 bg-amber-500/10 text-amber-400 rounded-full w-16 h-16 mx-auto flex items-center justify-center border border-amber-500/15">
+            <AlertTriangle className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold text-white">Generation Cancelled</h3>
+            <p className="text-sm text-amber-300/80 max-w-md mx-auto leading-relaxed">
+              The AI question generation was cancelled by the user. You can retry generation at any time.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-center gap-3 pt-4">
+            <button
+              onClick={() => handleRegenerate('default')}
+              className="flex items-center gap-2 bg-white text-black hover:bg-gray-100 px-5 py-3 rounded-xl font-semibold text-sm transition-colors"
+            >
+              <RotateCw className="w-4 h-4" />
+              Retry Standard Generation
+            </button>
+            <button
+              onClick={() => handleRegenerate('mcq_only')}
+              className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-5 py-3 rounded-xl font-semibold text-sm border border-white/5 transition-colors"
+            >
+              <ListTodo className="w-4 h-4" />
+              Retry as MCQ Only
+            </button>
           </div>
         </div>
       )}
@@ -407,11 +456,17 @@ export default function AssignmentDetails() {
                           <span>{q.text}</span>
                         </div>
                         {q.type === 'MCQ' && q.options && q.options.length > 0 && (
-                          <div className="mt-3 space-y-1.5 pl-6 font-sans">
+                          <div className="mt-3 space-y-2 pl-6 font-sans">
                             {q.options.map((opt, optIndex) => (
-                              <div key={optIndex} className="flex gap-2 text-sm">
-                                <span className="font-semibold">{String.fromCharCode(65 + optIndex)}.</span>
-                                <span>{opt}</span>
+                              <div key={optIndex} className="flex items-center gap-3 text-sm">
+                                <input
+                                  type="radio"
+                                  disabled
+                                  name={`question-${qIndex}-${sIndex}`}
+                                  className="w-4 h-4 text-violet-600 border-gray-300 focus:ring-violet-500 cursor-not-allowed accent-violet-600"
+                                />
+                                <span className="font-semibold text-gray-800">{String.fromCharCode(65 + optIndex)}.</span>
+                                <span className="text-gray-700">{opt}</span>
                               </div>
                             ))}
                           </div>

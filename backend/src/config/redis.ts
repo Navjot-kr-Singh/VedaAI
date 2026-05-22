@@ -1,10 +1,11 @@
-import Redis from 'ioredis';
+import Redis, { RedisOptions } from 'ioredis';
 import logger from './logger';
 
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 
-// Configure redis client with auto-reconnection and retry logic
-export const redisConnection = new Redis(redisUrl, {
+const isSecure = redisUrl.startsWith('rediss://') || redisUrl.includes('upstash.io');
+
+const connectionOptions: RedisOptions = {
   maxRetriesPerRequest: null, // Required by BullMQ
   enableReadyCheck: true,
   retryStrategy(times) {
@@ -12,7 +13,14 @@ export const redisConnection = new Redis(redisUrl, {
     logger.warn(`Redis connection lost. Retrying in ${delay}ms...`);
     return delay;
   },
-});
+};
+
+if (isSecure) {
+  connectionOptions.tls = {};
+}
+
+// Configure redis client with auto-reconnection and retry logic
+export const redisConnection = new Redis(redisUrl, connectionOptions);
 
 redisConnection.on('connect', () => {
   logger.info('Redis client connected');

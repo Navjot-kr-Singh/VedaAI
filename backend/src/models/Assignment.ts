@@ -32,7 +32,7 @@ export interface IAssignmentDocument extends Document {
   generatedPaper?: {
     sections: ISection[];
   };
-  status: 'queued' | 'processing' | 'generating' | 'completed' | 'failed';
+  status: 'queued' | 'processing' | 'generating' | 'completed' | 'failed' | 'cancelled';
   jobId?: string;
   startedAt?: Date;
   completedAt?: Date;
@@ -76,7 +76,7 @@ const AssignmentSchema = new Schema<IAssignmentDocument>(
     },
     status: {
       type: String,
-      enum: ['queued', 'processing', 'generating', 'completed', 'failed'],
+      enum: ['queued', 'processing', 'generating', 'completed', 'failed', 'cancelled'],
       default: 'queued',
       required: true,
     },

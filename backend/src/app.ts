@@ -36,6 +36,19 @@ app.use('/api/assignments', assignmentRoutes);
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   logger.error(`Unhandled Express Error: ${err.message || err}`);
   
+  if (err.name === 'MulterError' || err.code === 'LIMIT_FILE_SIZE') {
+    const message = err.code === 'LIMIT_FILE_SIZE'
+      ? 'File size limit exceeded. Max size allowed is 10MB.'
+      : `File upload error: ${err.message}`;
+    res.status(400).json({ success: false, message });
+    return;
+  }
+
+  if (err.message && (err.message.includes('Only PDF and TXT') || err.message.includes('allowed'))) {
+    res.status(400).json({ success: false, message: err.message });
+    return;
+  }
+
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Internal server error',

@@ -26,7 +26,7 @@ export interface IAssignment {
   totalQuestions: number;
   marks: number;
   difficulty: 'Easy' | 'Medium' | 'Hard';
-  status: 'queued' | 'processing' | 'generating' | 'completed' | 'failed';
+  status: 'queued' | 'processing' | 'generating' | 'completed' | 'failed' | 'cancelled';
   errorMessage?: string;
   generatedPaper?: {
     sections: ISection[];
@@ -56,6 +56,7 @@ interface AssignmentState {
   createAssignment: (formData: FormData) => Promise<IAssignment | null>;
   regenerateAssignment: (id: string, variant?: string) => Promise<void>;
   deleteAssignment: (id: string) => Promise<void>;
+  cancelAssignment: (id: string) => Promise<void>;
   updateAssignmentProgress: (assignmentId: string, update: IGenerationProgress) => void;
   clearCurrentAssignment: () => void;
 }
@@ -231,6 +232,34 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
       set({ assignments: previousAssignments });
       const msg = err.response?.data?.message || 'Error deleting assignment';
       useUIStore.getState().addToast(msg, 'error');
+    }
+  },
+
+  cancelAssignment: async (id) => {
+    useUIStore.getState().addToast('Cancelling AI generation...', 'info');
+
+    // Optimistically update status to cancelled
+    set((state) => ({
+      assignments: state.assignments.map((a) =>
+        a._id === id ? { ...a, status: 'cancelled' } : a
+      ),
+      currentAssignment:
+        state.currentAssignment?._id === id
+          ? { ...state.currentAssignment, status: 'cancelled' }
+          : state.currentAssignment,
+    }));
+
+    try {
+      await api.post(`/assignments/${id}/cancel`);
+      useUIStore.getState().addToast('Assignment generation cancelled', 'success');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Error cancelling assignment';
+      useUIStore.getState().addToast(msg, 'error');
+      
+      const fetched = await get().fetchAssignmentById(id);
+      if (!fetched) {
+        get().fetchAssignments();
+      }
     }
   },
 

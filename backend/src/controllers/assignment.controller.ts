@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import pdfParse from 'pdf-parse';
 import { Assignment } from '../models/Assignment';
-import { addGenerationJob } from '../queues/assessmentQueue';
+import { addGenerationJob, assessmentQueue } from '../queues/assessmentQueue';
 import { pdfService } from '../services/pdf.service';
 import { redisConnection } from '../config/redis';
 import assignmentEvents from '../utils/events';
@@ -29,8 +29,12 @@ export class AssignmentController {
             parsedText = req.file.buffer.toString('utf-8');
           }
           
+          const sanitizedFilename = req.file.originalname
+            .replace(/[^a-zA-Z0-9.\-_]/g, '_')
+            .replace(/\.\.+/g, '.');
+
           fileMeta = {
-            filename: req.file.originalname,
+            filename: sanitizedFilename,
             path: 'memory_buffer', // stored in database parsedText
             mimetype: req.file.mimetype,
             parsedText: parsedText,
@@ -152,7 +156,7 @@ export class AssignmentController {
     }
   };
 
-  // 4. Delete assignment and invalidate cache
+  // 4. Delete assignment, clean up BullMQ queue, and invalidate cache
   deleteAssignment = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
@@ -171,6 +175,21 @@ export class AssignmentController {
         logger.warn(`Redis cache invalidation failed: ${cacheErr}`);
       }
 
+      // Scan and remove BullMQ jobs
+      try {
+        const statuses: ('active' | 'waiting' | 'delayed' | 'failed' | 'paused' | 'completed')[] = ['active', 'waiting', 'delayed', 'failed', 'paused'];
+        const jobs = await assessmentQueue.getJobs(statuses);
+        
+        for (const job of jobs) {
+          if (job.data?.assignmentId === id) {
+            logger.info(`Removing job ${job.id} from queue for deleted Assignment: ${id}`);
+            await job.remove();
+          }
+        }
+      } catch (queueErr) {
+        logger.error(`Failed to remove job from BullMQ queue during delete: ${queueErr}`);
+      }
+
       res.status(200).json({
         success: true,
         message: 'Assignment deleted successfully',
@@ -178,6 +197,63 @@ export class AssignmentController {
     } catch (error: any) {
       logger.error(`Delete assignment error: ${error.message || error}`);
       res.status(500).json({ success: false, message: 'Internal server error deleting assignment' });
+    }
+  };
+
+  // 4b. Cancel assignment generation
+  cancelAssignment = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+
+      const assignment = await Assignment.findById(id);
+      if (!assignment) {
+        res.status(404).json({ success: false, message: 'Assignment not found' });
+        return;
+      }
+
+      if (assignment.status === 'completed') {
+        res.status(400).json({ success: false, message: 'Cannot cancel a completed assignment' });
+        return;
+      }
+
+      // Update Mongo status to cancelled
+      assignment.status = 'cancelled';
+      assignment.errorMessage = undefined;
+      await assignment.save();
+
+      // Invalidate Redis cache
+      try {
+        await redisConnection.del(getCacheKey(id));
+      } catch (cacheErr) {
+        logger.warn(`Redis cache invalidation failed during cancel: ${cacheErr}`);
+      }
+
+      // Scan and remove BullMQ jobs
+      try {
+        const statuses: ('active' | 'waiting' | 'delayed' | 'failed' | 'paused' | 'completed')[] = ['active', 'waiting', 'delayed', 'failed', 'paused'];
+        const jobs = await assessmentQueue.getJobs(statuses);
+        
+        for (const job of jobs) {
+          if (job.data?.assignmentId === id) {
+            logger.info(`Removing job ${job.id} from queue for Assignment: ${id}`);
+            await job.remove();
+          }
+        }
+      } catch (queueErr) {
+        logger.error(`Failed to remove job from BullMQ queue: ${queueErr}`);
+      }
+
+      // Emit event
+      assignmentEvents.emit('assignment:cancelled', id);
+
+      res.status(200).json({
+        success: true,
+        message: 'Assignment generation cancelled successfully',
+        data: assignment,
+      });
+    } catch (error: any) {
+      logger.error(`Cancel assignment error: ${error.message || error}`);
+      res.status(500).json({ success: false, message: 'Internal server error cancelling assignment' });
     }
   };
 

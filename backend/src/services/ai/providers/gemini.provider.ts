@@ -27,6 +27,10 @@ export class GeminiProvider implements IAIProvider {
     }
   }
 
+  isDemoMode(): boolean {
+    return this.client === null;
+  }
+
   private async discoverModels(): Promise<string[]> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey || !this.client) return [];
@@ -54,24 +58,29 @@ export class GeminiProvider implements IAIProvider {
       return this.getMockResponse();
     }
 
-    // Filter discovered models for compatible text generation/flash models
+    const SUPPORTED_MODELS = [
+      'gemini-2.0-flash',
+      'gemini-flash-latest',
+      'gemini-2.5-flash'
+    ];
+
+    // Filter discovered models for compatible text generation/flash models within whitelist
     const dynamicCompatible = this.discoveredModels.filter(
-      (m) => m.includes('flash') && !m.includes('image') && !m.includes('audio')
+      (m) => SUPPORTED_MODELS.includes(m)
     );
 
     const FALLBACK_CANDIDATES = [
-      'gemini-2.5-flash',
       'gemini-2.0-flash',
       'gemini-flash-latest',
-      'gemini-pro-latest'
+      'gemini-2.5-flash'
     ];
 
-    // Priority: Primary model 'gemini-2.5-flash', then dynamically discovered flash models, then other fallback candidates
+    // Priority: Primary model 'gemini-2.0-flash', then dynamically discovered flash models, then other fallback candidates
     const MODEL_CANDIDATES = Array.from(new Set([
-      'gemini-2.5-flash',
+      'gemini-2.0-flash',
       ...dynamicCompatible,
       ...FALLBACK_CANDIDATES
-    ]));
+    ])).filter(m => SUPPORTED_MODELS.includes(m));
 
     let lastError: any = null;
 

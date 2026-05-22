@@ -21,6 +21,10 @@ export const startAssessmentWorker = () => {
       if (!assignment) {
         throw new Error(`Assignment not found: ${assignmentId}`);
       }
+      if (assignment.status === 'cancelled') {
+        logger.info(`Aborting job ${job.id} for Assignment: ${assignmentId} at startup because it was cancelled.`);
+        return { success: false, reason: 'cancelled' };
+      }
 
       // 2. Prepare Reference Material with optional Chunking
       let referenceText = '';
@@ -28,6 +32,13 @@ export const startAssessmentWorker = () => {
         assignmentEvents.emit('assignment:progress', assignmentId, 20, 'Compressing reference text');
         referenceText = await chunkingService.processText(assignment.uploadedFile.parsedText);
         assignmentEvents.emit('assignment:progress', assignmentId, 35, 'Reference material prepared');
+      }
+
+      // Check cancellation state again
+      const currentAssignment = await Assignment.findById(assignmentId);
+      if (!currentAssignment || currentAssignment.status === 'cancelled') {
+        logger.info(`Aborting job ${job.id} for Assignment: ${assignmentId} before AI synthesis because it was cancelled.`);
+        return { success: false, reason: 'cancelled' };
       }
 
       // 3. Dispatch to AI orchestrator (includes sanitization, Zod checks, and 3x retries)
@@ -62,12 +73,19 @@ export const startAssessmentWorker = () => {
         );
       }
 
+      // Double check cancellation state to avoid race condition
+      const checkAssignment = await Assignment.findById(assignmentId);
+      if (!checkAssignment || checkAssignment.status === 'cancelled') {
+        logger.info(`Aborting job ${job.id} for Assignment: ${assignmentId} before saving because it was cancelled.`);
+        return { success: false, reason: 'cancelled' };
+      }
+
       // 5. Persistence
       assignmentEvents.emit('assignment:progress', assignmentId, 85, 'Formatting assessment details');
       
-      assignment.generatedPaper = generatedPaper;
-      assignment.status = 'completed';
-      await assignment.save();
+      checkAssignment.generatedPaper = generatedPaper;
+      checkAssignment.status = 'completed';
+      await checkAssignment.save();
 
       // Invalidate Redis cache after completion
       try {
@@ -92,9 +110,16 @@ export const startAssessmentWorker = () => {
     if (job) {
       const { assignmentId } = job.data;
       logger.error(`Job ${job.id} failed: ${err.message}`);
-      assignmentEvents.emit('assignment:failed', assignmentId, err.message);
       
       try {
+        const assignment = await Assignment.findById(assignmentId);
+        if (assignment && assignment.status === 'cancelled') {
+          logger.info(`Job ${job.id} failed but assignment was cancelled. Keeping cancelled status.`);
+          return;
+        }
+
+        assignmentEvents.emit('assignment:failed', assignmentId, err.message);
+        
         await Assignment.findByIdAndUpdate(assignmentId, {
           status: 'failed',
           errorMessage: err.message

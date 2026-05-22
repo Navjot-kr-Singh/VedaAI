@@ -29,6 +29,9 @@ const CreateAssignmentSchema = z.object({
   marks: z.number().int().positive('Must be a positive integer').min(1, 'Min 1 mark required'),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
   instructions: z.string().optional().default(''),
+}).refine((data) => data.marks >= data.totalQuestions, {
+  message: 'Total marks must be greater than or equal to the total questions count',
+  path: ['marks'],
 });
 
 type FormData = z.infer<typeof CreateAssignmentSchema>;

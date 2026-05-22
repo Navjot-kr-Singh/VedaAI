@@ -50,14 +50,14 @@ function createFillerQuestion(
 /**
  * Normalizes a generated paper's question count and marks.
  * 
- * 1. Flattens all questions across all sections.
+ * 1. Sanitizes and flattens all questions across all sections.
  * 2. If count > requested, trims extra questions.
  * 3. If count < requested, generates filler questions using allowed types.
  * 4. Rebalances marks using the Largest Remainder Method.
  * 5. Reconstructs sections matching original layout.
  */
 export function normalizeAssessment(
-  paper: IPaperInput,
+  paper: any,
   requestedTotalQuestions: number,
   requestedTotalMarks: number,
   allowedQuestionTypes: string[],
@@ -65,7 +65,6 @@ export function normalizeAssessment(
 ): IPaperInput {
   logger.info(`[Normalization] Normalizing paper to exact questions: ${requestedTotalQuestions}, marks: ${requestedTotalMarks}`);
 
-  // 1. Flatten all questions with original section info
   interface FlatQuestion {
     question: IQuestionInput;
     originalSectionIndex: number;
@@ -74,18 +73,67 @@ export function normalizeAssessment(
   }
 
   let flatQuestions: FlatQuestion[] = [];
-  paper.sections.forEach((section, sectionIdx) => {
-    section.questions.forEach((q) => {
+
+  // Defensive validation of incoming structure
+  const rawSections = Array.isArray(paper?.sections) ? paper.sections : [];
+  const sectionsToProcess = rawSections.length > 0 ? rawSections : [{
+    title: 'Section A: General Questions',
+    instruction: 'Answer all questions.',
+    questions: Array.isArray(paper?.questions) ? paper.questions : [],
+  }];
+
+  sectionsToProcess.forEach((section: any, sectionIdx: number) => {
+    const rawQuestions = Array.isArray(section?.questions) ? section.questions : [];
+    rawQuestions.forEach((q: any) => {
+      const questionType = typeof q?.type === 'string' && ['MCQ', 'Short Answer', 'Long Answer', 'Fill in the blanks'].includes(q.type)
+        ? q.type
+        : (allowedQuestionTypes[0] || 'Short Answer');
+
+      const cleanedQ: any = {
+        text: typeof q?.text === 'string' && q.text.trim().length >= 3 ? q.text : `Question details on topic (Question ${flatQuestions.length + 1})`,
+        type: questionType,
+        difficulty: typeof q?.difficulty === 'string' && ['Easy', 'Medium', 'Hard'].includes(q.difficulty) ? q.difficulty : difficulty,
+        marks: typeof q?.marks === 'number' && q.marks > 0 ? Math.floor(q.marks) : 1,
+      };
+
+      if (cleanedQ.type === 'MCQ') {
+        let opts = Array.isArray(q?.options) ? q.options.filter((o: any) => typeof o === 'string' && o.trim() !== '') : [];
+        if (opts.length !== 4) {
+          if (opts.length > 4) {
+            opts = opts.slice(0, 4);
+          } else {
+            const fillers = ['Option A', 'Option B', 'Option C', 'Option D'];
+            while (opts.length < 4) {
+              const filler = fillers[opts.length];
+              if (!opts.includes(filler)) {
+                opts.push(filler);
+              } else {
+                opts.push(`${filler} (Alt ${opts.length})`);
+              }
+            }
+          }
+        }
+        cleanedQ.options = opts;
+        let correct = typeof q?.correctAnswer === 'string' ? q.correctAnswer.trim() : '';
+        if (!correct || !opts.includes(correct)) {
+          correct = opts[0];
+        }
+        cleanedQ.correctAnswer = correct;
+      } else {
+        delete cleanedQ.options;
+        delete cleanedQ.correctAnswer;
+      }
+
       flatQuestions.push({
-        question: { ...q }, // deep-ish copy
+        question: cleanedQ as IQuestionInput,
         originalSectionIndex: sectionIdx,
-        sectionTitle: section.title,
-        sectionInstruction: section.instruction,
+        sectionTitle: typeof section?.title === 'string' && section.title.trim().length > 0 ? section.title : `Section ${sectionIdx + 1}`,
+        sectionInstruction: typeof section?.instruction === 'string' && section.instruction.trim().length > 0 ? section.instruction : 'Answer the questions.',
       });
     });
   });
 
-  const originalSectionsCount = paper.sections.length;
+  const originalSectionsCount = sectionsToProcess.length;
 
   // 2. Adjust Question Count
   if (flatQuestions.length > requestedTotalQuestions) {
@@ -93,7 +141,7 @@ export function normalizeAssessment(
     flatQuestions = flatQuestions.slice(0, requestedTotalQuestions);
   } else if (flatQuestions.length < requestedTotalQuestions) {
     logger.info(`[Normalization] Generating ${requestedTotalQuestions - flatQuestions.length} filler questions`);
-    const lastSection = paper.sections[originalSectionsCount - 1] || {
+    const lastSection = sectionsToProcess[originalSectionsCount - 1] || {
       title: 'Section A: General Questions',
       instruction: 'Answer all questions.',
     };
@@ -106,8 +154,8 @@ export function normalizeAssessment(
       flatQuestions.push({
         question: fillerQ,
         originalSectionIndex: originalSectionsCount - 1,
-        sectionTitle: lastSection.title,
-        sectionInstruction: lastSection.instruction,
+        sectionTitle: typeof lastSection?.title === 'string' ? lastSection.title : 'Section A: General Questions',
+        sectionInstruction: typeof lastSection?.instruction === 'string' ? lastSection.instruction : 'Answer all questions.',
       });
     }
   }
@@ -115,7 +163,6 @@ export function normalizeAssessment(
   // 3. Rebalance Marks (Largest Remainder Method)
   const N = flatQuestions.length;
   if (N > 0) {
-    // Each question must carry at least 1 mark
     const assignedMarks = new Array(N).fill(1);
     let remainingMarks = requestedTotalMarks - N;
 
@@ -123,9 +170,8 @@ export function normalizeAssessment(
       const originalMarks = flatQuestions.map((fq) => fq.question.marks || 1);
       const sumOriginalMarks = originalMarks.reduce((sum, m) => sum + m, 0);
 
-      // Compute initial proportional allocation
       const fractionalParts = originalMarks.map((m, idx) => {
-        const prop = (m / sumOriginalMarks) * remainingMarks;
+        const prop = (m / (sumOriginalMarks || 1)) * remainingMarks;
         const floor = Math.floor(prop);
         assignedMarks[idx] += floor;
         return {
@@ -138,7 +184,6 @@ export function normalizeAssessment(
       const diff = requestedTotalMarks - currentSum;
 
       if (diff > 0) {
-        // Distribute remainder to those with largest fractional parts
         fractionalParts.sort((a, b) => b.frac - a.frac);
         for (let i = 0; i < diff; i++) {
           const targetIdx = fractionalParts[i % N].idx;
@@ -146,11 +191,9 @@ export function normalizeAssessment(
         }
       }
     } else if (remainingMarks < 0) {
-      // requestedTotalMarks < N. Since marks must be positive integers, we set each to 1.
       logger.warn(`[Normalization] Target marks (${requestedTotalMarks}) is less than total questions (${N}). Setting all question marks to 1.`);
     }
 
-    // Apply the normalized marks
     flatQuestions.forEach((fq, idx) => {
       fq.question.marks = assignedMarks[idx];
     });

@@ -61,6 +61,12 @@ router.delete(
 );
 
 router.post(
+  '/:id/cancel',
+  validateRequest(GetAssignmentSchema),
+  assignmentController.cancelAssignment
+);
+
+router.post(
   '/:id/regenerate',
   apiRateLimiter,
   validateRequest(RegenerateAssignmentQuerySchema),
