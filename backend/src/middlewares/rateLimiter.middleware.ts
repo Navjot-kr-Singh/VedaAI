@@ -1,3 +1,4 @@
+import { Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
 import { redisConnection } from '../config/redis';
@@ -27,7 +28,7 @@ export const apiRateLimiter = rateLimit({
     success: false,
     message: 'Too many requests from this IP, please try again after 15 minutes.',
   },
-  handler: (req, res, next, options) => {
+  handler: (req: Request, res: Response, next: NextFunction, options: any) => {
     logger.warn(`Rate limit exceeded: IP ${req.ip} on ${req.method} ${req.originalUrl}`);
     res.status(429).json(options.message);
   },

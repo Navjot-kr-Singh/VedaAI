@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import multer from 'multer';
+import { Router, Request, Response, NextFunction } from 'express';
+import multer, { FileFilterCallback } from 'multer';
 import { assignmentController } from '../controllers/assignment.controller';
 import { validateRequest } from '../middlewares/validation.middleware';
 import { apiRateLimiter } from '../middlewares/rateLimiter.middleware';
@@ -17,7 +17,7 @@ const upload = multer({
   limits: {
     fileSize: 10 * 1024 * 1024, // 10 MB limit
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
     if (file.mimetype === 'application/pdf' || file.mimetype === 'text/plain') {
       cb(null, true);
     } else {
@@ -32,7 +32,7 @@ router.post(
   apiRateLimiter,
   upload.single('file'),
   // Add request transformation since form-data comes in as text
-  (req, res, next) => {
+  (req: Request, res: Response, next: NextFunction) => {
     if (req.body.questionTypes && typeof req.body.questionTypes === 'string') {
       try {
         req.body.questionTypes = JSON.parse(req.body.questionTypes);
