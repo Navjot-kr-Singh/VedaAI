@@ -9,12 +9,16 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "ignoreDeprecations": "6.0",
     "typeRoots": [
       "./node_modules/@types",
       "./src/types"
     ]
   },
-  "include": ["src/**/*"],
-  "exclude": ["src/tests", "**/*.test.ts"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "src/tests",
+    "**/*.test.ts"
+  ]
 }
