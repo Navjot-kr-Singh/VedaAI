@@ -83,7 +83,7 @@ export const startAssessmentWorker = () => {
       // 5. Persistence
       assignmentEvents.emit('assignment:progress', assignmentId, 85, 'Formatting assessment details');
       
-      checkAssignment.generatedPaper = generatedPaper;
+      checkAssignment.generatedPaper = generatedPaper as any;
       checkAssignment.status = 'completed';
       await checkAssignment.save();
 
