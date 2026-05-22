@@ -39,6 +39,15 @@ export default function AssignmentDetails() {
   } = useAssignmentStore();
 
   const addToast = useUIStore((state) => state.addToast);
+  const { organizationName, organizationLocation } = useUIStore();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const orgName = mounted ? organizationName : 'Delhi Public School';
+  const orgLoc = mounted ? organizationLocation : 'Bokaro Steel City';
+
   const [variantDropdownOpen, setVariantDropdownOpen] = useState(false);
 
   // Initialize socket room connection for this assignment id
@@ -456,7 +465,7 @@ export default function AssignmentDetails() {
               {/* Header */}
               <div className="text-center space-y-2 border-b-2 border-black pb-4">
                 <h1 className="text-xl font-bold font-serif text-black uppercase tracking-wider">
-                  Delhi Public School, Sector-4, Bokaro
+                  {orgName}, {orgLoc}
                 </h1>
                 
                 <div className="text-xs text-gray-800 font-sans mt-2 space-y-1">

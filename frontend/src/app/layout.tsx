@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Inter } from 'next/font/google';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -35,7 +35,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     toasts,
     setMobileDrawer,
     removeToast,
+    organizationName,
+    organizationLocation,
+    userName,
+    userInitials,
+    userRole,
   } = useUIStore();
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const orgName = mounted ? organizationName : 'Delhi Public School';
+  const orgLoc = mounted ? organizationLocation : 'Bokaro Steel City';
+  const name = mounted ? userName : 'John Doe';
+  const initials = mounted ? userInitials : 'JD';
+  const role = mounted ? userRole : 'Teacher Account';
 
   const { assignments, fetchAssignments } = useAssignmentStore();
 
@@ -48,11 +64,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   }, [fetchAssignments]);
 
   const navItems = [
-    { label: 'Home', href: '#', icon: Home, disabled: true },
-    { label: 'My Groups', href: '#', icon: Users, disabled: true },
+    { label: 'Home', href: '/', icon: Home },
+    { label: 'My Groups', href: '/my-groups', icon: Users },
     { label: 'Assignments', href: '/', icon: ClipboardList, badge: true },
-    { label: 'AI Teacher\'s Toolkit', href: '#', icon: Sparkles, disabled: true },
-    { label: 'Settings', href: '#', icon: Settings, disabled: true },
+    { label: 'AI Teacher\'s Toolkit', href: '/toolkit', icon: Sparkles },
+    { label: 'Settings', href: '/settings', icon: Settings },
   ];
 
   // Detect current breadcrumb page title
@@ -61,6 +77,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     pageTitle = 'Create Assignment';
   } else if (pathname.includes('/assignments/')) {
     pageTitle = 'Assignment View';
+  } else if (pathname === '/settings') {
+    pageTitle = 'Settings';
+  } else if (pathname === '/my-groups') {
+    pageTitle = 'My Groups';
+  } else if (pathname === '/toolkit') {
+    pageTitle = 'AI Teacher\'s Toolkit';
   }
 
   return (
@@ -108,19 +130,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   // Assignments is the active navigation item corresponding to home route /
-                  const active = (item.label === 'Assignments' && (pathname === '/' || pathname.startsWith('/assignments')));
+                  const active =
+                    (item.label === 'Assignments' && (pathname === '/' || pathname.startsWith('/assignments') || pathname.startsWith('/create'))) ||
+                    (item.label === 'Settings' && pathname === '/settings') ||
+                    (item.label === 'My Groups' && pathname === '/my-groups') ||
+                    (item.label === 'AI Teacher\'s Toolkit' && pathname === '/toolkit');
                   return (
                     <Link
                       key={item.label}
-                      href={item.disabled ? '#' : item.href}
+                      href={item.href}
                       className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-150 group ${
                         active
                           ? 'bg-[#fae0d6] text-[#ed6c37]'
                           : 'text-[#262626] hover:bg-gray-50 hover:text-[#181818]'
                       }`}
-                      onClick={(e) => {
-                        if (item.disabled) e.preventDefault();
-                      }}
                     >
                       <div className="flex items-center gap-3.5">
                         <Icon className={`w-5 h-5 flex-shrink-0 ${
@@ -150,8 +173,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <GraduationCap className="w-5 h-5" />
                 </div>
                 <div className="overflow-hidden">
-                  <p className="text-xs font-bold text-[#181818] truncate leading-tight">Delhi Public School</p>
-                  <p className="text-[10px] text-gray-500 truncate mt-0.5">Bokaro Steel City</p>
+                  <p className="text-xs font-bold text-[#181818] truncate leading-tight">{orgName}</p>
+                  <p className="text-[10px] text-gray-500 truncate mt-0.5">{orgLoc}</p>
                 </div>
               </div>
             </div>
@@ -181,11 +204,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <nav className="flex-1 flex flex-col gap-2">
                   {navItems.map((item) => {
                     const Icon = item.icon;
-                    const active = (item.label === 'Assignments' && (pathname === '/' || pathname.startsWith('/assignments')));
+                    const active =
+                      (item.label === 'Assignments' && (pathname === '/' || pathname.startsWith('/assignments') || pathname.startsWith('/create'))) ||
+                      (item.label === 'Settings' && pathname === '/settings') ||
+                      (item.label === 'My Groups' && pathname === '/my-groups') ||
+                      (item.label === 'AI Teacher\'s Toolkit' && pathname === '/toolkit');
                     return (
                       <Link
                         key={item.label}
-                        href={item.disabled ? '#' : item.href}
+                        href={item.href}
                         onClick={() => setMobileDrawer(false)}
                         className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-150 group ${
                           active
@@ -216,8 +243,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       <GraduationCap className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-[#181818]">Delhi Public School</p>
-                      <p className="text-[10px] text-gray-500">Bokaro Steel City</p>
+                      <p className="text-xs font-bold text-[#181818]">{orgName}</p>
+                      <p className="text-[10px] text-gray-500">{orgLoc}</p>
                     </div>
                   </div>
                 </div>
@@ -246,6 +273,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <span className="text-gray-300">/</span>
                     <span className="text-[#ed6c37]">View</span>
                   </>
+                ) : pathname === '/settings' ? (
+                  <span className="text-[#ed6c37]">Settings</span>
+                ) : pathname === '/my-groups' ? (
+                  <span className="text-[#ed6c37]">My Groups</span>
+                ) : pathname === '/toolkit' ? (
+                  <span className="text-[#ed6c37]">AI Teacher's Toolkit</span>
                 ) : (
                   <span className="text-[#ed6c37]">Assignments</span>
                 )}
@@ -272,12 +305,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
                 {/* User Dropdown */}
                 <div className="flex items-center gap-2.5 border-l border-gray-100 pl-4 py-0.5 cursor-pointer group">
-                  <div className="w-8 h-8 rounded-full bg-orange-100 border border-orange-200 text-[#ed6c37] flex items-center justify-center font-bold text-xs shadow-sm">
-                    JD
+                  <div className="w-8 h-8 rounded-full bg-orange-100 border border-orange-200 text-[#ed6c37] flex items-center justify-center font-bold text-xs shadow-sm uppercase">
+                    {initials}
                   </div>
                   <div className="text-left">
-                    <p className="text-xs font-bold text-[#181818] group-hover:text-[#ed6c37] transition-colors leading-tight">John Doe</p>
-                    <p className="text-[10px] text-gray-400">Teacher Account</p>
+                    <p className="text-xs font-bold text-[#181818] group-hover:text-[#ed6c37] transition-colors leading-tight">{name}</p>
+                    <p className="text-[10px] text-gray-400">{role}</p>
                   </div>
                   <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600" />
                 </div>
