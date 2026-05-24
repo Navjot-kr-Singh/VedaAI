@@ -132,13 +132,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex-1 flex flex-col relative pb-24 px-1 lg:px-4">
-      {/* Title */}
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-bold text-[#181818] tracking-tight">Assignments</h2>
-          <p className="text-gray-500 text-xs mt-0.5">Manage and view your question papers</p>
-        </div>
-      </div>
+
 
       {loading ? (
         // Grid Loading Skeleton Screen
@@ -155,18 +149,54 @@ export default function Dashboard() {
           ))}
         </div>
       ) : assignments.length === 0 ? (
-        // Empty State Panel (Screenshot 1/2)
-        <div className="flex-1 flex flex-col items-center justify-center py-20 px-8 text-center bg-white border border-[#eaeaea] rounded-2xl shadow-sm max-w-2xl mx-auto my-auto w-full">
-          <div className="p-4 rounded-full bg-[#fae0d6] text-[#ed6c37] mb-5 border border-orange-100">
-            <BookOpen className="w-10 h-10" />
-          </div>
-          <h3 className="text-lg font-bold text-[#181818]">No assignments yet</h3>
+        // Empty State Panel (Figma Screenshot 1)
+        <div className="flex-1 flex flex-col items-center justify-center py-14 px-8 text-center max-w-2xl mx-auto my-auto w-full">
+          {/* Custom Pixel-Perfect Figma SVG Illustration */}
+          <svg viewBox="0 0 400 280" className="w-64 h-48 mb-6" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Soft grey background circle */}
+            <circle cx="200" cy="140" r="90" fill="#f0f0f2" />
+            
+            {/* Squiggle top left */}
+            <path d="M125 110 C125 75, 165 75, 140 100 C120 120, 110 115, 145 80" stroke="#18181b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            
+            {/* Sparkle bottom left */}
+            <path d="M135 190 Q135 198 127 198 Q135 198 135 206 Q135 198 143 198 Q135 198 135 190 Z" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+
+            {/* Blue dot right */}
+            <circle cx="280" cy="165" r="4" fill="#2563eb" />
+            
+            {/* Small grey header card top right */}
+            <rect x="240" y="75" width="50" height="32" rx="6" fill="#ffffff" stroke="#e4e4e7" strokeWidth="1.5" />
+            <circle cx="250" cy="91" r="3.5" fill="#cbd5e1" />
+            <rect x="260" y="87" width="22" height="8" rx="4" fill="#cbd5e1" />
+            
+            {/* White document card in background */}
+            <rect x="155" y="85" width="90" height="120" rx="12" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
+            {/* Card content lines */}
+            <line x1="167" y1="105" x2="200" y2="105" stroke="#18181b" strokeWidth="6" strokeLinecap="round" />
+            <line x1="167" y1="123" x2="225" y2="123" stroke="#e2e8f0" strokeWidth="6" strokeLinecap="round" />
+            <line x1="167" y1="141" x2="225" y2="141" stroke="#e2e8f0" strokeWidth="6" strokeLinecap="round" />
+            <line x1="167" y1="159" x2="200" y2="159" stroke="#e2e8f0" strokeWidth="6" strokeLinecap="round" />
+            <line x1="167" y1="177" x2="220" y2="177" stroke="#e2e8f0" strokeWidth="6" strokeLinecap="round" />
+
+            {/* Magnifying glass overlay */}
+            {/* Glass Handle */}
+            <line x1="232" y1="172" x2="267" y2="207" stroke="#c0c0e0" strokeWidth="11" strokeLinecap="round" />
+            <line x1="232" y1="172" x2="267" y2="207" stroke="#d5d5ed" strokeWidth="7" strokeLinecap="round" />
+            {/* Glass Ring */}
+            <circle cx="205" cy="145" r="36" fill="#e8e8f8" fillOpacity="0.4" stroke="#c0c0e0" strokeWidth="6" />
+            
+            {/* Red X mark inside lens */}
+            <line x1="193" y1="133" x2="217" y2="157" stroke="#ef4444" strokeWidth="7" strokeLinecap="round" />
+            <line x1="217" y1="133" x2="193" y2="157" stroke="#ef4444" strokeWidth="7" strokeLinecap="round" />
+          </svg>
+          <h3 className="text-xl font-bold text-[#181818] tracking-tight">No assignments yet</h3>
           <p className="text-gray-500 text-xs max-w-md mt-2 mb-8 leading-relaxed">
             Create your first assignment to start collecting and grading student submissions. You can set up rubrics, define marking criteria, and let AI assist with grading.
           </p>
           <Link
             href="/create"
-            className="flex items-center gap-2 bg-[#ed6c37] hover:bg-orange-600 text-white px-5 py-3 rounded-xl font-bold text-xs transition-colors shadow-md shadow-orange-500/10"
+            className="flex items-center justify-center bg-[#181818] hover:bg-black text-white px-7 py-3.5 rounded-full font-bold text-xs transition-colors shadow-lg cursor-pointer"
           >
             + Create Your First Assignment
           </Link>
