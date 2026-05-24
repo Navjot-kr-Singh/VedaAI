@@ -91,7 +91,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   let headerIcon = LayoutGrid;
   let headerTitle = 'Assignment';
 
-  if (pathname === '/settings') {
+  if (pathname.startsWith('/create') || pathname.startsWith('/assignments')) {
+    headerIcon = Sparkles;
+    headerTitle = 'Create New';
+  } else if (pathname === '/settings') {
     headerIcon = Settings;
     headerTitle = 'Settings';
   } else if (pathname === '/my-groups') {

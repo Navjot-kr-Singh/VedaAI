@@ -184,94 +184,26 @@ export default function AssignmentDetails() {
     );
   }
 
+  const { subject, className } = getSubjectAndClass(currentAssignment.title);
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header Panel (Hidden on Print) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#eaeaea] pb-4 no-print">
-        <Link href="/" className="inline-flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-gray-900 transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Dashboard
-        </Link>
-
-        {isFinished && (
-          <div className="flex items-center gap-3">
-            {/* AI Regeneration Variants dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setVariantDropdownOpen(!variantDropdownOpen)}
-                className="flex items-center gap-2 bg-white border border-[#eaeaea] hover:border-[#ed6c37]/30 text-gray-700 hover:text-gray-900 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm"
-              >
-                <Sparkles className="w-4 h-4 text-[#ed6c37]" />
-                AI Variants
-              </button>
-              {variantDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white border border-[#eaeaea] rounded-2xl shadow-xl py-2 z-50 animate-slide-in">
-                  <button
-                    onClick={() => handleRegenerate('default')}
-                    className="w-full text-left px-4 py-2.5 text-xs text-gray-600 hover:bg-[#fae0d6]/50 hover:text-[#ed6c37] flex items-center gap-2 font-semibold transition-colors"
-                  >
-                    <RotateCw className="w-3.5 h-3.5 text-gray-400" />
-                    Regenerate Default
-                  </button>
-                  <button
-                    onClick={() => handleRegenerate('easier')}
-                    className="w-full text-left px-4 py-2.5 text-xs text-gray-600 hover:bg-[#fae0d6]/50 hover:text-[#ed6c37] flex items-center gap-2 font-semibold transition-colors"
-                  >
-                    <TrendingDown className="w-3.5 h-3.5 text-emerald-500" />
-                    Regenerate Easier Paper
-                  </button>
-                  <button
-                    onClick={() => handleRegenerate('harder')}
-                    className="w-full text-left px-4 py-2.5 text-xs text-gray-600 hover:bg-[#fae0d6]/50 hover:text-[#ed6c37] flex items-center gap-2 font-semibold transition-colors"
-                  >
-                    <TrendingUp className="w-3.5 h-3.5 text-rose-500" />
-                    Regenerate Harder Paper
-                  </button>
-                  <button
-                    onClick={() => handleRegenerate('mcq_only')}
-                    className="w-full text-left px-4 py-2.5 text-xs text-gray-600 hover:bg-[#fae0d6]/50 hover:text-[#ed6c37] flex items-center gap-2 font-semibold transition-colors"
-                  >
-                    <ListTodo className="w-3.5 h-3.5 text-blue-500" />
-                    Convert to MCQ Only
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-2 bg-white border border-[#eaeaea] hover:border-gray-300 text-gray-700 hover:text-black px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm"
-            >
-              <Printer className="w-4 h-4 text-gray-500" />
-              Print
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* AI Intro Bubble (Screenshot 9) */}
+    <div className="max-w-5xl mx-auto bg-[#3a3a3a] rounded-[32px] p-6 lg:p-8 space-y-6 shadow-xl print:bg-transparent print:p-0 print:shadow-none print:rounded-none">
+      {/* Dark prompt card (hidden on print) */}
       {isFinished && (
-        <div className="bg-[#fae0d6] text-[#181818] p-5 rounded-2xl border border-[#ed6c37]/20 flex gap-3 items-start no-print shadow-sm">
-          <div className="p-1.5 bg-white rounded-lg border border-[#ed6c37]/10 shrink-0">
-            <Sparkles className="w-4.5 h-4.5 text-[#ed6c37] fill-[#ed6c37]/10" />
-          </div>
-          <p className="text-xs font-semibold leading-relaxed text-gray-800">
-            Certainly, Lakshya! Here are customized Question Paper for your CBSE Grade 8 Science classes on the NCERT chapters:
+        <div className="bg-[#1e1e1e] p-6 rounded-[24px] space-y-4 no-print text-left">
+          <p className="text-sm font-semibold leading-relaxed text-gray-200">
+            Certainly, Lakshya! Here are customized Question Paper for your CBSE Grade {className} {subject} classes on the NCERT chapters:
           </p>
-        </div>
-      )}
-
-      {/* Download Button (Screenshot 9) */}
-      {isFinished && (
-        <div className="flex justify-start no-print">
-          <a
-            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/assignments/${currentAssignment._id}/pdf`}
-            download
-            className="flex items-center gap-2 bg-white border border-[#eaeaea] hover:border-gray-300 text-gray-800 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm"
-          >
-            <FileText className="w-4 h-4 text-gray-500" />
-            Download as PDF
-          </a>
+          <div>
+            <a
+              href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/assignments/${currentAssignment._id}/pdf`}
+              download
+              className="inline-flex items-center gap-2 bg-white hover:bg-gray-100 text-[#181818] px-6 py-3 rounded-full font-bold text-xs transition-colors shadow-md"
+            >
+              <FileText className="w-4 h-4 text-[#181818]" />
+              <span>Download as PDF</span>
+            </a>
+          </div>
         </div>
       )}
 
@@ -416,40 +348,6 @@ export default function AssignmentDetails() {
         </div>
       )}
 
-      {/* Validation Banner (Hidden on Print) */}
-      {isFinished && (
-        <div className="glass-card p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 border-emerald-200 bg-emerald-50 no-print">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
-              <CheckCircle className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-gray-800 flex items-center gap-2">
-                Verification Successful
-                <span className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider">
-                  AI Verified
-                </span>
-              </h4>
-              <p className="text-[10px] text-gray-500 mt-0.5">
-                The generated paper exactly matches the requested specifications.
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-6 text-[10px] text-gray-600 pr-2">
-            <div className="space-y-0.5">
-              <span className="text-gray-400 block text-[9px] font-bold uppercase tracking-wider">Questions</span>
-              <span className="font-bold text-gray-800">{generatedQuestionCount} / {currentAssignment.totalQuestions}</span>
-            </div>
-            <div className="h-6 w-px bg-gray-200" />
-            <div className="space-y-0.5">
-              <span className="text-gray-400 block text-[9px] font-bold uppercase tracking-wider">Total Marks</span>
-              <span className="font-bold text-gray-800">{generatedTotalMarks} / {currentAssignment.marks}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Printable Exam Paper Content */}
       {(isFinished || (isGenerating && currentAssignment.generatedPaper)) && (
         (() => {
@@ -461,50 +359,40 @@ export default function AssignmentDetails() {
           );
 
           return (
-            <div className="print-container bg-white text-black p-8 lg:p-12 shadow-md rounded-2xl border border-[#eaeaea] flex flex-col font-serif">
+            <div className="print-container bg-white text-black p-8 lg:p-12 shadow-md rounded-[24px] border border-[#eaeaea] flex flex-col font-sans">
               {/* Header */}
-              <div className="text-center space-y-2 border-b-2 border-black pb-4">
-                <h1 className="text-xl font-bold font-serif text-black uppercase tracking-wider">
+              <div className="text-center pb-4">
+                <h1 className="text-[24px] font-bold text-black tracking-tight mb-2">
                   {orgName}, {orgLoc}
                 </h1>
                 
-                <div className="text-xs text-gray-800 font-sans mt-2 space-y-1">
-                  <div><span className="font-bold">Subject:</span> {subject}</div>
-                  <div><span className="font-bold">Class:</span> {className}</div>
+                <div className="text-center font-bold text-[#181818] text-sm space-y-1 mt-3 mb-4">
+                  <div>Subject: {subject}</div>
+                  <div>Class: {className}</div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center text-xs text-gray-800 font-sans mt-3 gap-1 sm:gap-0">
-                  <div className="text-left"><span className="font-bold">Time Allowed:</span> {timeAllowed}</div>
-                  <div className="text-left sm:text-right"><span className="font-bold">Maximum Marks:</span> {currentAssignment.marks}</div>
+                <div className="flex justify-between items-center text-xs font-bold text-[#181818] mt-4 border-b border-black pb-4">
+                  <div>Time Allowed: {timeAllowed}</div>
+                  <div>Maximum Marks: {currentAssignment.marks}</div>
                 </div>
 
-                <p className="text-xs italic text-gray-600 font-sans pt-2 text-left">
+                <p className="text-xs font-semibold text-gray-600 mt-4 text-left font-sans">
                   All questions are compulsory unless stated otherwise.
                 </p>
               </div>
 
               {/* Student blanks sheet */}
-              <div className="flex flex-col gap-4 py-6 border-b border-black text-xs font-sans text-gray-700">
-                <div className="flex gap-1 items-center">
-                  <span>Name:</span>
-                  <span className="flex-1 border-b border-black/30 min-h-[16px]" />
-                </div>
-                <div className="flex gap-1 items-center">
-                  <span>Roll Number:</span>
-                  <span className="flex-1 border-b border-black/30 min-h-[16px]" />
-                </div>
-                <div className="flex gap-1 items-center">
-                  <span>Class:</span>
-                  <span className="font-bold mr-1">{className}</span>
-                  <span className="ml-4">Section:</span>
-                  <span className="flex-1 border-b border-black/30 min-h-[16px]" />
-                </div>
+              <div className="space-y-3 py-2 text-xs font-semibold text-gray-800 text-left">
+                <div>Name: ________________________________________________________________</div>
+                <div>Roll Number: ___________________________________________________________</div>
+                <div>Class: {className} &nbsp;&nbsp;&nbsp;&nbsp; Section: ____________________________________________</div>
               </div>
+              <div className="border-t border-black/20 my-4" />
 
               {/* Specific Instruction */}
               {currentAssignment.instructions && (
-                <div className="py-4 border-b border-black/30 text-xs italic text-gray-600 leading-relaxed font-sans">
-                  <strong className="block text-xs font-bold text-gray-800 not-italic mb-1 font-sans">General Instructions:</strong>
+                <div className="py-4 border-b border-black/30 text-xs text-gray-600 leading-relaxed font-sans text-left">
+                  <strong className="block text-xs font-bold text-gray-800 mb-1 font-sans">General Instructions:</strong>
                   {currentAssignment.instructions}
                 </div>
               )}
@@ -515,7 +403,7 @@ export default function AssignmentDetails() {
                   <div key={sIndex} className="print-section space-y-4">
                     {/* Section Header */}
                     <div className="text-center pb-2">
-                      <h3 className="text-base font-bold font-sans text-black mb-3">
+                      <h3 className="text-base font-bold text-center text-black mb-3 uppercase tracking-wider font-sans">
                         {section.title}
                       </h3>
                       <div className="text-xs text-left text-gray-800 font-sans whitespace-pre-line leading-relaxed space-y-1 mb-4">
@@ -534,27 +422,19 @@ export default function AssignmentDetails() {
                     <div className="space-y-4 pl-2">
                       {section.questions.map((q, qIndex) => {
                         globalQNum++;
-                        const diffTag = getDifficultyTag(q.difficulty);
                         return (
-                          <div key={qIndex} className="print-question flex flex-col text-sm text-black leading-relaxed font-serif">
+                          <div key={qIndex} className="print-question flex flex-col text-sm text-black leading-relaxed font-sans mb-4 text-left">
                             <div>
-                              <span className="font-bold font-sans mr-2">{globalQNum}.</span>
-                              <span className="font-semibold text-gray-700 mr-2">[{diffTag}]</span>
+                              <span className="font-bold mr-2">{globalQNum}.</span>
                               <span>{q.text}</span>
-                              <span className="font-bold font-sans ml-2">[{q.marks} {q.marks === 1 ? 'Mark' : 'Marks'}]</span>
+                              <span className="font-bold ml-2">[{q.marks} {q.marks === 1 ? 'Mark' : 'Marks'}]</span>
                             </div>
                             {q.type === 'MCQ' && q.options && q.options.length > 0 && (
-                              <div className="mt-3 space-y-2 pl-6 font-sans">
+                              <div className="mt-2.5 space-y-1.5 pl-6 font-sans">
                                 {q.options.map((opt, optIndex) => (
-                                  <div key={optIndex} className="flex items-center gap-3 text-sm">
-                                    <input
-                                      type="radio"
-                                      disabled
-                                      name={`question-${globalQNum}`}
-                                      className="w-4 h-4 text-[#ed6c37] border-gray-300 focus:ring-[#ed6c37] cursor-not-allowed accent-[#ed6c37]"
-                                    />
-                                    <span className="font-semibold text-gray-800">{String.fromCharCode(65 + optIndex)}.</span>
-                                    <span className="text-gray-700">{opt}</span>
+                                  <div key={optIndex} className="text-sm text-gray-800 flex items-start gap-1">
+                                    <span className="font-bold text-[#181818] min-w-[20px]">{String.fromCharCode(65 + optIndex)}.</span>
+                                    <span>{opt}</span>
                                   </div>
                                 ))}
                               </div>
@@ -577,7 +457,7 @@ export default function AssignmentDetails() {
 
               {/* Answer Key section (Screenshot 10/13) */}
               {hasAnswers && (
-                <div className="mt-12 pt-8 border-t-2 border-black print-section">
+                <div className="mt-12 pt-8 border-t-2 border-black print-section text-left">
                   <h3 className="text-base font-bold font-sans text-black mb-4">Answer Key:</h3>
                   <div className="space-y-4 pl-2">
                     {(() => {
@@ -586,8 +466,8 @@ export default function AssignmentDetails() {
                         section.questions.map((q, qIndex) => {
                           ansNumber++;
                           return (
-                            <div key={ansNumber} className="text-sm font-serif text-black leading-relaxed flex items-start gap-2">
-                              <span className="font-bold font-sans min-w-[20px]">{ansNumber}.</span>
+                            <div key={ansNumber} className="text-sm font-sans text-black leading-relaxed flex items-start gap-2">
+                              <span className="font-bold min-w-[20px]">{ansNumber}.</span>
                               <span className="flex-1">{q.correctAnswer || 'Answer explanation not provided.'}</span>
                             </div>
                           );

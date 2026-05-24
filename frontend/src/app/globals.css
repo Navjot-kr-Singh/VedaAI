@@ -76,13 +76,13 @@
 
 /* Custom inputs for light mode */
 input, select, textarea {
-  background-color: #ffffff !important;
-  color: #181818 !important;
-  border-color: #eaeaea !important;
+  background-color: #ffffff;
+  color: #181818;
+  border-color: #eaeaea;
 }
 
 input:focus, select:focus, textarea:focus {
-  border-color: #ed6c37 !important;
+  border-color: #ed6c37;
   outline: none;
 }
 

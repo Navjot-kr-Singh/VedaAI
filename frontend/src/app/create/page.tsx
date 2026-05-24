@@ -19,6 +19,10 @@ import {
   GraduationCap,
   ChevronRight,
   ClipboardList,
+  Mic,
+  Plus,
+  ChevronDown,
+  ArrowRight,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -152,9 +156,43 @@ export default function CreateAssignment() {
     }
   };
 
-  const toggleRowActive = (index: number) => {
+  const handleLabelChange = (index: number, newLabel: string) => {
+    let key = newLabel;
+    if (newLabel === 'Multiple Choice Questions') key = 'MCQ';
+    else if (newLabel === 'Short Questions') key = 'Short Answer';
+    else if (newLabel === 'Diagram/Graph-Based Questions') key = 'Long Answer';
+    else if (newLabel === 'Numerical Problems') key = 'Fill in the blanks';
+
     setTableRows((prev) =>
-      prev.map((row, idx) => (idx === index ? { ...row, active: !row.active } : row))
+      prev.map((row, idx) =>
+        idx === index ? { ...row, label: newLabel, key: key } : row
+      )
+    );
+  };
+
+  const handleAddRow = () => {
+    const inactiveIndex = tableRows.findIndex((r) => !r.active);
+    if (inactiveIndex !== -1) {
+      setTableRows((prev) =>
+        prev.map((row, idx) => (idx === inactiveIndex ? { ...row, active: true } : row))
+      );
+    } else {
+      setTableRows((prev) => [
+        ...prev,
+        {
+          key: `Custom-${prev.length}`,
+          label: 'Long Questions',
+          active: true,
+          count: 5,
+          marks: 5,
+        },
+      ]);
+    }
+  };
+
+  const handleRemoveRow = (index: number) => {
+    setTableRows((prev) =>
+      prev.map((row, idx) => (idx === index ? { ...row, active: false } : row))
     );
   };
 
@@ -164,36 +202,16 @@ export default function CreateAssignment() {
     );
   };
 
-  const handleNextStep = async (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    // Validate current step fields
-    const isStep1Valid = await trigger(['title', 'dueDate', 'difficulty']);
-    if (isStep1Valid) {
-      setStep(2);
-    }
-  };
-
-  const handlePrevStep = () => {
-    setStep(1);
-  };
-
   const onSubmit = async (data: FormData) => {
-    if (step === 1) {
-      // Prevent premature submission if triggered (e.g. via Enter key)
-      handleNextStep();
-      return;
-    }
+    const generatedTitle = data.title || (uploadedFile ? uploadedFile.name.replace(/\.[^/.]+$/, "") : "Assignment " + new Date().toLocaleDateString());
 
     const form = new FormData();
-    form.append('title', data.title);
+    form.append('title', generatedTitle);
     form.append('dueDate', data.dueDate);
     form.append('difficulty', data.difficulty);
     form.append('totalQuestions', String(data.totalQuestions));
     form.append('marks', String(data.marks));
-    form.append('instructions', data.instructions);
+    form.append('instructions', data.instructions || '');
     form.append('questionTypes', JSON.stringify(data.questionTypes));
 
     if (uploadedFile) {
@@ -206,309 +224,316 @@ export default function CreateAssignment() {
     }
   };
 
+  // Sync title value
+  useEffect(() => {
+    if (!watch('title')) {
+      if (uploadedFile) {
+        setValue('title', uploadedFile.name.replace(/\.[^/.]+$/, ""));
+      } else {
+        setValue('title', 'Assignment ' + new Date().toLocaleDateString());
+      }
+    }
+  }, [uploadedFile, setValue, watch]);
+
   const totalQuestionsSum = tableRows.filter((r) => r.active).reduce((sum, r) => sum + r.count, 0);
   const totalMarksSum = tableRows.filter((r) => r.active).reduce((sum, r) => sum + r.count * r.marks, 0);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 px-1 lg:px-4 pb-20">
-      
-      {/* Back button */}
-      <Link href="/" className="inline-flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-gray-900 transition-colors no-print">
-        <ArrowLeft className="w-3.5 h-3.5" />
-        Back to Dashboard
-      </Link>
+    <div className="max-w-7xl mx-auto px-1 lg:px-4 pb-24">
+      {/* Header Title Section below Navigation Bar */}
+      <div className="mb-6 mt-2">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#34c759] flex-shrink-0" />
+          <h2 className="text-[19px] font-bold text-[#181818] tracking-tight">Create Assignment</h2>
+        </div>
+        <p className="text-gray-500 text-xs mt-1 pl-4.5">Set up a new assignment for your students</p>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Column: Progress Stepper panel (Screenshot 6/8) */}
-        <div className="space-y-4 lg:col-span-1 no-print">
-          <div className="bg-white border border-[#eaeaea] rounded-2xl p-6 shadow-sm space-y-6">
-            <h3 className="text-sm font-bold text-[#181818]">Create Assignment</h3>
-            <p className="text-xs text-gray-500 leading-relaxed">Set up a new assignment for your students.</p>
-            
-            <div className="space-y-6 pt-2">
-              {[
-                { number: 1, label: 'Assignment Details', desc: 'Basic information about your assignment', active: step === 1 },
-                { number: 2, label: 'Questions & Marking', desc: 'Configure types, marks and instruction details', active: step === 2 },
-              ].map((s) => (
-                <div key={s.number} className="flex gap-4 items-start">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border flex-shrink-0 transition-all ${
-                    s.active
-                      ? 'bg-[#fae0d6] border-[#ed6c37] text-[#ed6c37] shadow-sm'
-                      : 'bg-white border-[#eaeaea] text-gray-400'
-                  }`}>
-                    {s.number}
-                  </div>
-                  <div>
-                    <p className={`text-xs font-bold ${s.active ? 'text-[#181818]' : 'text-gray-400'}`}>{s.label}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{s.desc}</p>
+      {/* Horizontal Stepper Progress Bar */}
+      <div className="grid grid-cols-2 gap-4 mt-6 mb-8 w-full">
+        <div className="h-[4px] rounded-full bg-[#181818] transition-all duration-300" />
+        <div className="h-[4px] rounded-full bg-[#cbd5e1] transition-all duration-300" />
+      </div>
+
+      {/* Main Consolidated Card Form */}
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="bg-white border border-[#eaeaea] rounded-[24px] shadow-sm p-8 space-y-6"
+      >
+        <div>
+          <h3 className="text-base font-bold text-[#181818]">Assignment Details</h3>
+          <p className="text-xs text-gray-400 mt-1 mb-6">Basic information about your assignment</p>
+        </div>
+
+        {/* Optional Title input styled exactly like the other fields */}
+        <div className="space-y-2">
+          <label htmlFor="title" className="text-xs font-bold text-[#181818]">
+            Assignment Title
+          </label>
+          <input
+            id="title"
+            type="text"
+            placeholder="e.g. CBSE Science Electricity midterm exam"
+            {...register('title')}
+            className={`w-full px-5 py-3 bg-[#f4f4f4] border-none rounded-full text-xs text-[#181818] placeholder-gray-400 focus:outline-none transition-colors ${
+              errors.title ? 'ring-1 ring-rose-500' : ''
+            }`}
+          />
+          {errors.title && <p className="text-rose-600 text-[10px] font-semibold mt-1">{errors.title.message}</p>}
+        </div>
+
+        {/* Study References File Upload Box */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-[#181818] block">Study References</label>
+          <div
+            onDragEnter={handleDrag}
+            onDragOver={handleDrag}
+            onDragLeave={handleDrag}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-[20px] p-8 text-center cursor-pointer transition-all ${
+              dragActive
+                ? 'border-[#ed6c37] bg-orange-50/20'
+                : 'border-[#e4e4e7] hover:border-gray-300 hover:bg-gray-50/30'
+            }`}
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept=".pdf,.txt"
+              className="hidden"
+            />
+            <UploadCloud className="w-8 h-8 text-[#181818] mx-auto mb-3" strokeWidth={2.2} />
+            <p className="text-xs font-bold text-[#181818]">Choose a file or drag & drop it here</p>
+            <button
+              type="button"
+              className="mt-3 bg-[#f4f4f5] hover:bg-gray-200 text-[#181818] px-4 py-1.5 rounded-full font-bold text-[10px] transition-colors inline-block"
+            >
+              Browse Files
+            </button>
+            <p className="text-[10px] text-gray-400 mt-3.5 leading-relaxed">
+              JPEG, PNG, upto 10MB
+            </p>
+          </div>
+          <p className="text-[11px] text-gray-400 mt-2 text-center">
+            Upload images of your preferred document/image
+          </p>
+
+          {/* Upload Status Card */}
+          {uploadedFile && (
+            <div className="p-3 bg-gray-50 border border-[#eaeaea] rounded-xl space-y-2.5 mt-2 animate-fade-in">
+              <div className="flex items-center gap-3 justify-between">
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <FileText className="w-7 h-7 text-[#ed6c37] flex-shrink-0" />
+                  <div className="text-left overflow-hidden">
+                    <p className="text-xs font-bold text-[#181818] truncate">{uploadedFile.name}</p>
+                    <p className="text-[10px] text-gray-500">{(uploadedFile.size / 1024 / 1024).toFixed(2)} MB</p>
                   </div>
                 </div>
-              ))}
+                <button
+                  type="button"
+                  onClick={handleRemoveFile}
+                  className="p-1 text-gray-400 hover:text-gray-900 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {uploadProgress !== null && (
+                <div className="space-y-1">
+                  <div className="w-full bg-gray-200 rounded-full h-1">
+                    <div
+                      className="bg-[#ed6c37] h-1 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[9px] text-gray-500 font-semibold">
+                    <span>{uploadProgress === 100 ? 'Uploaded' : 'Uploading...'}</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Due Date & Difficulty Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[#181818] block">
+              Due Date
+            </label>
+            <div className="relative">
+              <input
+                type="date"
+                {...register('dueDate')}
+                className="w-full px-5 py-3 bg-[#f4f4f4] border-none rounded-full text-xs text-[#181818] focus:outline-none placeholder-gray-400 appearance-none cursor-pointer"
+              />
+              <Calendar className="w-4 h-4 text-gray-400 absolute right-5 top-3.5 pointer-events-none" />
+            </div>
+            {errors.dueDate && <p className="text-rose-600 text-[10px] font-semibold mt-1">{errors.dueDate.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[#181818] block">
+              Target Difficulty
+            </label>
+            <div className="relative">
+              <select
+                {...register('difficulty')}
+                className="w-full px-5 py-3 bg-[#f4f4f4] border-none rounded-full text-xs text-[#181818] focus:outline-none appearance-none cursor-pointer"
+              >
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+              <ChevronDown className="w-4 h-4 text-gray-400 absolute right-5 top-3.5 pointer-events-none" />
             </div>
           </div>
         </div>
 
-        {/* Right Column: Form content card */}
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
-              if (step === 1) {
-                e.preventDefault();
-                handleNextStep();
-              }
-            }
-          }}
-          className="lg:col-span-2 bg-white border border-[#eaeaea] rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between"
-        >
-          <div className="p-6 lg:p-8 space-y-6">
-            
-            {/* Step 1 Content: General configurations */}
-            {step === 1 && (
-              <div className="space-y-6 animate-slide-in">
-                
-                {/* Title */}
-                <div className="space-y-2">
-                  <label htmlFor="title" className="text-xs font-bold text-[#181818]">
-                    Assignment Title
-                  </label>
-                  <input
-                    id="title"
-                    type="text"
-                    placeholder="e.g. CBSE Science Electricity midterm exam"
-                    {...register('title')}
-                    className={`w-full px-4 py-3 bg-white border rounded-xl text-xs text-[#181818] placeholder-gray-400 focus:outline-none transition-colors ${
-                      errors.title ? 'border-rose-500 focus:border-rose-500' : 'border-[#eaeaea]'
-                    }`}
-                  />
-                  {errors.title && <p className="text-rose-600 text-[10px] font-semibold mt-1">{errors.title.message}</p>}
-                </div>
+        {/* Question Type Section */}
+        <div className="space-y-4 pt-2">
+          <div className="flex justify-between items-center mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+            <span>Question Type</span>
+            <div className="flex gap-[70px] mr-12">
+              <span>No. of Questions</span>
+              <span>Marks</span>
+            </div>
+          </div>
 
-                {/* File Upload Box */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-[#181818]">Study References</label>
-                  <div
-                    onDragEnter={handleDrag}
-                    onDragOver={handleDrag}
-                    onDragLeave={handleDrag}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-                      dragActive
-                        ? 'border-[#ed6c37] bg-orange-50/20'
-                        : 'border-[#eaeaea] hover:border-gray-300 hover:bg-gray-50/30'
-                    }`}
-                  >
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept=".pdf,.txt"
-                      className="hidden"
-                    />
-                    <UploadCloud className="w-9 h-9 text-gray-400 mx-auto mb-3" />
-                    <p className="text-xs font-bold text-[#181818]">Choose a file or drag & drop it here</p>
+          <div className="space-y-3.5">
+            {tableRows
+              .map((row, idx) => {
+                if (!row.active) return null;
+                return (
+                  <div key={row.key} className="flex items-center gap-3 animate-fade-in">
+                    {/* Dropdown for question type selection */}
+                    <div className="relative flex-1">
+                      <select
+                        value={row.label}
+                        onChange={(e) => handleLabelChange(idx, e.target.value)}
+                        className="w-full px-5 py-2.5 bg-[#f4f4f4] border-none rounded-full text-xs text-[#181818] focus:outline-none appearance-none cursor-pointer font-medium"
+                      >
+                        <option value="Multiple Choice Questions">Multiple Choice Questions</option>
+                        <option value="Short Questions">Short Questions</option>
+                        <option value="Diagram/Graph-Based Questions">Diagram/Graph-Based Questions</option>
+                        <option value="Numerical Problems">Numerical Problems</option>
+                        <option value="Long Questions">Long Questions</option>
+                        <option value="True/False">True/False</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-gray-400 absolute right-5 top-3 pointer-events-none" />
+                    </div>
+
+                    {/* Delete icon */}
                     <button
                       type="button"
-                      className="mt-2 text-[11px] font-bold text-[#ed6c37] hover:underline"
+                      onClick={() => handleRemoveRow(idx)}
+                      className="p-1 hover:bg-gray-100 rounded-full transition-colors focus:outline-none"
                     >
-                      Browse Files
+                      <X className="w-4 h-4 text-gray-400 hover:text-gray-900 cursor-pointer" />
                     </button>
-                    <p className="text-[10px] text-gray-400 mt-2 leading-relaxed">
-                      Upload images of your preferred document/image (PDF, TXT up to 10MB)
-                    </p>
-                  </div>
 
-                  {/* Upload state card */}
-                  {uploadedFile && (
-                    <div className="p-3 bg-gray-50 border border-[#eaeaea] rounded-xl space-y-2.5 mt-2">
-                      <div className="flex items-center gap-3 justify-between">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          <FileText className="w-7 h-7 text-[#ed6c37] flex-shrink-0" />
-                          <div className="text-left overflow-hidden">
-                            <p className="text-xs font-bold text-[#181818] truncate">{uploadedFile.name}</p>
-                            <p className="text-[10px] text-gray-500">{(uploadedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handleRemoveFile}
-                          className="p-1 text-gray-400 hover:text-gray-900 transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {uploadProgress !== null && (
-                        <div className="space-y-1">
-                          <div className="w-full bg-gray-200 rounded-full h-1">
-                            <div
-                              className="bg-[#ed6c37] h-1 rounded-full transition-all duration-300"
-                              style={{ width: `${uploadProgress}%` }}
-                            />
-                          </div>
-                          <div className="flex justify-between text-[9px] text-gray-500 font-semibold">
-                            <span>{uploadProgress === 100 ? 'Uploaded' : 'Uploading...'}</span>
-                            <span>{uploadProgress}%</span>
-                          </div>
-                        </div>
-                      )}
+                    {/* Questions counter capsule */}
+                    <div className="flex items-center bg-[#f4f4f4] rounded-full px-3 py-1.5 gap-3.5 w-[85px] justify-between">
+                      <button 
+                        type="button"
+                        onClick={() => updateRowValue(idx, 'count', Math.max(1, row.count - 1))}
+                        className="text-gray-400 hover:text-gray-900 font-bold text-xs select-none focus:outline-none"
+                      >
+                        —
+                      </button>
+                      <span className="text-xs font-bold text-[#181818]">{row.count}</span>
+                      <button 
+                        type="button"
+                        onClick={() => updateRowValue(idx, 'count', row.count + 1)}
+                        className="text-gray-400 hover:text-gray-900 font-bold text-xs select-none focus:outline-none"
+                      >
+                        +
+                      </button>
                     </div>
-                  )}
-                </div>
 
-                {/* Grid Inputs: Due Date + Difficulty */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-[#181818] flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                      Due Date
-                    </label>
-                    <input
-                      type="date"
-                      {...register('dueDate')}
-                      className="w-full px-4 py-3 bg-white border border-[#eaeaea] rounded-xl text-xs text-[#181818] focus:outline-none"
-                    />
-                    {errors.dueDate && <p className="text-rose-600 text-[10px] font-semibold mt-1">{errors.dueDate.message}</p>}
+                    {/* Marks counter capsule */}
+                    <div className="flex items-center bg-[#f4f4f4] rounded-full px-3 py-1.5 gap-3.5 w-[85px] justify-between">
+                      <button 
+                        type="button"
+                        onClick={() => updateRowValue(idx, 'marks', Math.max(1, row.marks - 1))}
+                        className="text-gray-400 hover:text-gray-900 font-bold text-xs select-none focus:outline-none"
+                      >
+                        —
+                      </button>
+                      <span className="text-xs font-bold text-[#181818]">{row.marks}</span>
+                      <button 
+                        type="button"
+                        onClick={() => updateRowValue(idx, 'marks', row.marks + 1)}
+                        className="text-gray-400 hover:text-gray-900 font-bold text-xs select-none focus:outline-none"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-[#181818] flex items-center gap-1">
-                      <Layers className="w-3.5 h-3.5 text-gray-400" />
-                      Target Difficulty
-                    </label>
-                    <select
-                      {...register('difficulty')}
-                      className="w-full px-4 py-3 bg-white border border-[#eaeaea] rounded-xl text-xs text-[#181818] focus:outline-none"
-                    >
-                      <option value="Easy">Easy</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Hard">Hard</option>
-                    </select>
-                  </div>
-                </div>
-
-              </div>
-            )}
-
-            {/* Step 2 Content: Question Type Table Inputs & Instructions (Screenshot 7) */}
-            {step === 2 && (
-              <div className="space-y-6 animate-slide-in">
-                
-                {/* Question Types Table */}
-                <div className="space-y-3">
-                  <label className="text-xs font-bold text-[#181818]">Question Type Settings</label>
-                  <div className="border border-[#eaeaea] rounded-xl overflow-hidden shadow-sm">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-gray-50 border-b border-[#eaeaea] text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                          <th className="px-4 py-3 w-10"></th>
-                          <th className="px-4 py-3">Question Type</th>
-                          <th className="px-4 py-3 w-32">No. of Questions</th>
-                          <th className="px-4 py-3 w-28">Marks/Question</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#eaeaea]">
-                        {tableRows.map((row, idx) => (
-                          <tr key={row.key} className={`text-xs ${row.active ? 'bg-white' : 'bg-gray-50/50 text-gray-400'}`}>
-                            <td className="px-4 py-3.5 text-center">
-                              <input
-                                type="checkbox"
-                                checked={row.active}
-                                onChange={() => toggleRowActive(idx)}
-                                className="accent-[#ed6c37] w-4 h-4 cursor-pointer"
-                              />
-                            </td>
-                            <td className="px-4 py-3.5 font-semibold text-[#181818]">{row.label}</td>
-                            <td className="px-4 py-3.5">
-                              <input
-                                type="number"
-                                disabled={!row.active}
-                                value={row.count}
-                                onChange={(e) => updateRowValue(idx, 'count', Math.max(1, parseInt(e.target.value) || 0))}
-                                className="w-20 px-2 py-1 bg-white border border-[#eaeaea] rounded-lg text-xs focus:outline-none disabled:opacity-50 text-center"
-                              />
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <input
-                                type="number"
-                                step="any"
-                                disabled={!row.active}
-                                value={row.marks}
-                                onChange={(e) => updateRowValue(idx, 'marks', Math.max(0.1, parseFloat(e.target.value) || 0))}
-                                className="w-16 px-2 py-1 bg-white border border-[#eaeaea] rounded-lg text-xs focus:outline-none disabled:opacity-50 text-center"
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {errors.questionTypes && <p className="text-rose-600 text-[10px] font-semibold mt-1">{errors.questionTypes.message}</p>}
-                </div>
-
-                {/* Additional instructions block */}
-                <div className="space-y-2">
-                  <label htmlFor="instructions" className="text-xs font-bold text-[#181818]">
-                    Additional Information (For better output)
-                  </label>
-                  <textarea
-                    id="instructions"
-                    rows={3}
-                    placeholder="e.g. Generate a question paper for 3 hour exam duration..."
-                    {...register('instructions')}
-                    className="w-full px-4 py-3 bg-white border border-[#eaeaea] rounded-xl text-xs text-[#181818] placeholder-gray-400 focus:outline-none transition-colors resize-none"
-                  />
-                </div>
-
-                {/* Calculated statistics summary block */}
-                <div className="bg-[#fae0d6]/30 border border-[#fae0d6] rounded-xl p-4 flex flex-wrap gap-x-8 gap-y-2 text-xs font-semibold text-[#ed6c37]">
-                  <div>Total Questions: <span className="font-bold text-[#181818]">{totalQuestionsSum}</span></div>
-                  <div>Total Marks: <span className="font-bold text-[#181818]">{totalMarksSum}</span></div>
-                </div>
-
-              </div>
-            )}
+                );
+              })}
           </div>
 
-          {/* Card footer buttons */}
-          <div className="bg-gray-50 border-t border-[#eaeaea] px-6 py-4 flex items-center justify-between no-print">
-            {step === 2 ? (
-              <button
-                key="btn-step-prev"
-                type="button"
-                onClick={handlePrevStep}
-                className="inline-flex items-center gap-1.5 px-4 py-2 border border-[#eaeaea] hover:bg-gray-100 rounded-xl text-xs font-bold text-gray-600 transition-colors"
-              >
-                &lt; Previous
-              </button>
-            ) : (
-              <div key="btn-step-prev-placeholder" />
-            )}
+          {/* Add Question Type trigger */}
+          <button
+            type="button"
+            onClick={handleAddRow}
+            className="inline-flex items-center gap-2.5 text-xs font-bold text-[#181818] hover:underline mt-2.5 focus:outline-none"
+          >
+            <span className="w-5 h-5 rounded-full bg-[#181818] flex items-center justify-center text-white text-[11px] font-bold">
+              +
+            </span>
+            <span>Add Question Type</span>
+          </button>
+          
+          {errors.questionTypes && <p className="text-rose-600 text-[10px] font-semibold mt-1">{errors.questionTypes.message}</p>}
+        </div>
 
-            {step === 1 ? (
-              <button
-                key="btn-step-next"
-                type="button"
-                onClick={handleNextStep}
-                className="inline-flex items-center gap-1 px-5 py-2.5 bg-[#ed6c37] hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
-              >
-                <span>Next</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <button
-                key="btn-step-submit"
-                type="submit"
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#ed6c37] hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-orange-500/10"
-              >
-                <Sparkles className="w-4 h-4 fill-white" />
-                <span>Generate Assessment Paper</span>
-              </button>
-            )}
+        {/* Dynamic total counts banner */}
+        <div className="text-right space-y-1 pt-2">
+          <p className="text-[11px] text-gray-500 font-semibold">Total Questions : <span className="text-[#181818] font-bold">{totalQuestionsSum}</span></p>
+          <p className="text-[11px] text-gray-500 font-semibold">Total Marks : <span className="text-[#181818] font-bold">{totalMarksSum}</span></p>
+        </div>
+
+        {/* Additional instructions block */}
+        <div className="space-y-2 pt-2">
+          <label htmlFor="instructions" className="text-xs font-bold text-[#181818] block">
+            Additional Information (For better output)
+          </label>
+          <div className="relative">
+            <textarea
+              id="instructions"
+              rows={3}
+              placeholder="e.g. Generate a question paper for 3 hour exam duration..."
+              {...register('instructions')}
+              className="w-full px-5 py-4 bg-[#f4f4f4] border-none rounded-[20px] text-xs text-[#181818] placeholder-gray-400 focus:outline-none transition-colors resize-none pr-10"
+            />
+            <Mic className="w-4 h-4 text-gray-400 absolute right-4 bottom-4 cursor-pointer hover:text-gray-900 transition-colors" />
           </div>
-        </form>
+        </div>
+      </form>
+
+      {/* Previous and Next Pill Buttons below the card */}
+      <div className="flex items-center justify-between mt-6 w-full px-1 no-print">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-white border border-[#eaeaea] hover:bg-gray-50 rounded-full text-xs font-bold text-[#595959] transition-all shadow-sm"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 text-[#595959]" />
+          <span>Previous</span>
+        </Link>
+
+        <button
+          type="button"
+          onClick={handleSubmit(onSubmit)}
+          className="inline-flex items-center gap-1.5 px-7 py-3 bg-[#181818] hover:bg-black text-white rounded-full text-xs font-bold transition-all shadow-md cursor-pointer"
+        >
+          <span>Next</span>
+          <ArrowRight className="w-3.5 h-3.5 text-white" />
+        </button>
       </div>
     </div>
   );
