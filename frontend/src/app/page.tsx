@@ -15,6 +15,10 @@ import {
   Clock,
   Sparkles,
   BookOpen,
+  MoreVertical,
+  SlidersHorizontal,
+  Plus,
+  Search,
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -22,9 +26,9 @@ export default function Dashboard() {
     useAssignmentStore();
   const addToast = useUIStore((state) => state.addToast);
 
-  // Default parameters for backend query
   const [searchTerm] = useState('');
   const [statusFilter] = useState('');
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
   // Fetch list of assignments
   useEffect(() => {
@@ -47,6 +51,17 @@ export default function Dashboard() {
       clearInterval(interval);
     };
   }, [assignments, searchTerm, statusFilter, fetchAssignments]);
+
+  // Close card menu on click outside
+  useEffect(() => {
+    const handleOutsideClick = () => {
+      setActiveMenuId(null);
+    };
+    window.addEventListener('click', handleOutsideClick);
+    return () => {
+      window.removeEventListener('click', handleOutsideClick);
+    };
+  }, []);
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -132,6 +147,30 @@ export default function Dashboard() {
 
   return (
     <div className="flex-1 flex flex-col relative pb-24 px-1 lg:px-4">
+      {/* Subheader page title */}
+      <div className="mb-6 mt-2 text-left">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#34c759] flex-shrink-0" />
+          <h2 className="text-[19px] font-bold text-[#181818] tracking-tight">Assignments</h2>
+        </div>
+        <p className="text-gray-500 text-xs mt-1 pl-[18px]">Manage and create assignments for your classes.</p>
+      </div>
+
+      {/* Filter and Search Bar Capsule */}
+      <div className="bg-white rounded-full border border-[#eaeaea] h-[48px] px-6 flex items-center justify-between shadow-sm mb-6 no-print">
+        <span className="text-xs font-bold text-gray-500 flex items-center gap-2 cursor-pointer hover:text-gray-900">
+          <SlidersHorizontal className="w-3.5 h-3.5 text-gray-400" />
+          Filter By
+        </span>
+        <div className="relative w-64">
+          <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search Assignment"
+            className="w-full pl-9 pr-4 py-1.5 bg-white border border-[#eaeaea] rounded-full text-xs placeholder-gray-400 focus:outline-none focus:border-[#ed6c37]"
+          />
+        </div>
+      </div>
 
 
       {loading ? (
@@ -210,97 +249,131 @@ export default function Dashboard() {
               const isFailed = assignment.status === 'failed' || assignment.status === 'cancelled';
               const isGenerating = ['queued', 'processing', 'generating'].includes(assignment.status);
               
+              if (isFinished) {
+                return (
+                  <div
+                    key={assignment._id}
+                    className="bg-white border border-[#eaeaea] rounded-[24px] p-6 flex flex-col justify-between hover:shadow-md transition-shadow relative min-h-[140px]"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <h4 className="font-bold text-base text-[#181818] tracking-tight truncate-2-lines text-left">
+                        {assignment.title}
+                      </h4>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setActiveMenuId(activeMenuId === assignment._id ? null : assignment._id);
+                          }}
+                          className="text-gray-400 hover:text-gray-700 p-1 rounded-full cursor-pointer focus:outline-none"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                        {activeMenuId === assignment._id && (
+                          <div className="absolute right-0 mt-1 bg-white border border-[#eaeaea] rounded-xl shadow-lg py-1.5 w-36 z-20 text-left">
+                            <Link
+                              href={`/assignments/${assignment._id}`}
+                              className="block px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+                              onClick={() => setActiveMenuId(null)}
+                            >
+                              View Assignment
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                handleDelete(assignment._id, e);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs font-semibold text-gray-500">
+                      <span>Assigned on : {formatDate(assignment.createdAt)}</span>
+                      <span>Due : {formatDate(assignment.dueDate)}</span>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (isGenerating) {
+                return (
+                  <div
+                    key={assignment._id}
+                    className="bg-white border border-[#eaeaea] rounded-[24px] p-6 flex flex-col justify-between relative min-h-[140px]"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <h4 className="font-bold text-base text-[#181818] tracking-tight truncate-2-lines text-left">
+                        {assignment.title}
+                      </h4>
+                      <div className="text-[11px] font-bold text-[#ed6c37] bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 flex items-center gap-1.5 shrink-0">
+                        <svg className="animate-spin h-3 w-3 text-[#ed6c37]" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        <span>Generating...</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                        <div
+                          className="bg-[#ed6c37] h-1.5 rounded-full transition-all duration-300"
+                          style={{ width: `${progressUpdates[assignment._id]?.progress || 0}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] text-gray-400 font-semibold">
+                        <span>Assigned on : {formatDate(assignment.createdAt)}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => handleCancel(assignment._id, e)}
+                          className="text-rose-600 hover:underline cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              // Failed/Cancelled state card
               return (
                 <div
                   key={assignment._id}
-                  className="bg-white border border-[#eaeaea] rounded-2xl p-6 flex flex-col justify-between hover:border-[#ed6c37] transition-all duration-200 relative group shadow-sm"
+                  className="bg-white border border-[#eaeaea] rounded-[24px] p-6 flex flex-col justify-between relative min-h-[140px]"
                 >
-                  <div className="space-y-4">
-                    {/* Header: Title */}
-                    <div className="flex items-start justify-between gap-4">
-                      <h4 className="font-bold text-sm text-[#181818] leading-snug truncate-2-lines">
-                        {assignment.title}
-                      </h4>
+                  <div className="flex items-start justify-between gap-4">
+                    <h4 className="font-bold text-base text-[#181818] tracking-tight truncate-2-lines text-left">
+                      {assignment.title}
+                    </h4>
+                    <div className="text-[11px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100 shrink-0">
+                      Failed
                     </div>
-
-                    {/* Metadata lines */}
-                    <div className="space-y-1.5 text-xs text-gray-500">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                        <span>Assigned on : {formatDate(assignment.createdAt)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-3.5 h-3.5 text-gray-400" />
-                        <span>Due: {formatDate(assignment.dueDate)}</span>
-                      </div>
-                      <div className="flex items-center gap-2 pt-1 font-semibold text-gray-700">
-                        <Award className="w-3.5 h-3.5 text-gray-400" />
-                        <span>{assignment.marks} Marks • {assignment.totalQuestions} Questions • {assignment.difficulty}</span>
-                      </div>
-                    </div>
-
-                    {/* Failed Error Message panel */}
-                    {isFailed && assignment.errorMessage && (
-                      <div className="p-3 rounded-xl bg-rose-50 border border-rose-100 text-[11px] text-rose-700 flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-500 mt-0.5" />
-                        <span>{assignment.errorMessage}</span>
-                      </div>
-                    )}
                   </div>
 
-                  <div className="border-t border-[#eaeaea] mt-5 pt-4 flex flex-col gap-3">
-                    {/* Status indicator row */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400 font-medium">Status</span>
-                      {renderStatusBadge(assignment)}
-                    </div>
-
-                    {/* Action buttons/links */}
-                    {isFinished ? (
-                      <div className="flex items-center justify-between gap-4 mt-1 pt-1">
-                        <Link
-                          href={`/assignments/${assignment._id}`}
-                          className="text-xs font-bold text-[#ed6c37] hover:underline"
-                        >
-                          View Assignment
-                        </Link>
-                        <button
-                          onClick={(e) => handleDelete(assignment._id, e)}
-                          className="text-xs font-semibold text-gray-400 hover:text-red-500 hover:underline flex items-center gap-1 transition-all"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Delete
-                        </button>
-                      </div>
-                    ) : isFailed ? (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={(e) => handleRetry(assignment._id, e)}
-                          className="w-full flex items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100 border border-[#eaeaea] text-gray-700 py-2.5 rounded-xl text-xs font-bold transition-colors"
-                        >
-                          <RotateCw className="w-4 h-4" />
-                          Retry Generation
-                        </button>
-                        <button
-                          onClick={(e) => handleDelete(assignment._id, e)}
-                          className="px-3 border border-[#eaeaea] text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : isGenerating ? (
-                      <button
-                        onClick={(e) => handleCancel(assignment._id, e)}
-                        className="w-full flex items-center justify-center gap-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 py-2 rounded-xl text-xs font-bold transition-colors"
-                      >
-                        Cancel Generation
-                      </button>
-                    ) : (
-                      <div className="w-full flex items-center justify-center gap-2 bg-gray-50 text-gray-400 py-2 rounded-xl text-xs font-medium border border-transparent">
-                        <span>Queued...</span>
-                      </div>
-                    )}
+                  <div className="flex justify-between items-center text-xs font-semibold text-gray-500">
+                    <button
+                      type="button"
+                      onClick={(e) => handleRetry(assignment._id, e)}
+                      className="text-[#ed6c37] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCw className="w-3 h-3" /> Retry
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDelete(assignment._id, e)}
+                      className="text-red-500 hover:underline cursor-pointer"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               );
@@ -311,10 +384,10 @@ export default function Dashboard() {
           <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-30 no-print">
             <Link
               href="/create"
-              className="flex items-center gap-2.5 bg-[#181818] hover:bg-black text-white px-7 py-4 rounded-full font-bold text-sm transition-all shadow-xl hover:-translate-y-0.5 duration-150"
+              className="flex items-center gap-1.5 bg-[#181818] hover:bg-black text-white px-7 py-3.5 rounded-full font-bold text-xs transition-all shadow-xl hover:-translate-y-0.5 duration-150"
             >
-              <Sparkles className="w-4.5 h-4.5 text-white fill-white" />
-              <span>+ Create Assignment</span>
+              <Plus className="w-4 h-4 text-white" />
+              <span>Create Assignment</span>
             </Link>
           </div>
         </>
