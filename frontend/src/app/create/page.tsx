@@ -28,7 +28,7 @@ import Link from 'next/link';
 
 // Validation Schema
 const CreateAssignmentSchema = z.object({
-  title: z.string().min(3, 'Title must be at least 3 characters long').trim(),
+  title: z.string().min(1, 'Assignment Title is required').trim(),
   dueDate: z.string().min(1, 'Due date is required'),
   questionTypes: z.array(z.string()).min(1, 'Select at least one question format'),
   totalQuestions: z.number().int().positive('Must be a positive integer').min(1, 'Min 1 question required'),
@@ -48,6 +48,7 @@ export default function CreateAssignment() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Dynamic table rows state
@@ -69,7 +70,7 @@ export default function CreateAssignment() {
     resolver: zodResolver(CreateAssignmentSchema),
     defaultValues: {
       title: '',
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days in future
+      dueDate: '',
       questionTypes: ['MCQ', 'Short Answer'],
       totalQuestions: 7,
       marks: 10,
@@ -132,6 +133,7 @@ export default function CreateAssignment() {
     }
 
     setUploadedFile(file);
+    setFileError(null);
     simulateUpload();
   };
 
@@ -203,7 +205,14 @@ export default function CreateAssignment() {
   };
 
   const onSubmit = async (data: FormData) => {
-    const generatedTitle = data.title || (uploadedFile ? uploadedFile.name.replace(/\.[^/.]+$/, "") : "Assignment " + new Date().toLocaleDateString());
+    if (!uploadedFile) {
+      setFileError('Syllabus / Reference Study Material is required');
+      addToast('Please upload a syllabus or study reference document.', 'error');
+      return;
+    }
+    setFileError(null);
+
+    const generatedTitle = data.title;
 
     const form = new FormData();
     form.append('title', generatedTitle);
@@ -213,10 +222,7 @@ export default function CreateAssignment() {
     form.append('marks', String(data.marks));
     form.append('instructions', data.instructions || '');
     form.append('questionTypes', JSON.stringify(data.questionTypes));
-
-    if (uploadedFile) {
-      form.append('file', uploadedFile);
-    }
+    form.append('file', uploadedFile);
 
     const result = await createAssignment(form);
     if (result) {
@@ -226,12 +232,8 @@ export default function CreateAssignment() {
 
   // Sync title value
   useEffect(() => {
-    if (!watch('title')) {
-      if (uploadedFile) {
-        setValue('title', uploadedFile.name.replace(/\.[^/.]+$/, ""));
-      } else {
-        setValue('title', 'Assignment ' + new Date().toLocaleDateString());
-      }
+    if (uploadedFile && !watch('title')) {
+      setValue('title', uploadedFile.name.replace(/\.[^/.]+$/, ""));
     }
   }, [uploadedFile, setValue, watch]);
 
@@ -356,6 +358,7 @@ export default function CreateAssignment() {
               )}
             </div>
           )}
+          {fileError && <p className="text-rose-600 text-[10px] font-semibold mt-1">{fileError}</p>}
         </div>
 
         {/* Due Date & Difficulty Grid */}

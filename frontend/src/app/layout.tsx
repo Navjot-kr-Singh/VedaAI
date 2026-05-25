@@ -110,7 +110,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-sans bg-[#ededed] text-[#181818] min-h-screen flex flex-col antialiased`}>
+      <body className={`${inter.variable} font-sans bg-[#e8e8eb] text-[#181818] min-h-screen flex flex-col antialiased`}>
         
         {/* Mobile Header (Hidden on Desktop) */}
         <header className="lg:hidden h-16 border-b border-[#eaeaea] bg-white sticky top-0 z-40 flex items-center justify-between px-6 no-print">
@@ -159,7 +159,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="flex-1 flex relative">
           
           {/* Desktop Floating Sidebar (Hidden on Mobile) */}
-          <aside className="hidden lg:flex flex-col w-64 bg-white border border-[#eaeaea] rounded-[28px] m-4 mr-2 shadow-sm h-[calc(100vh-2rem)] sticky top-4 justify-between flex-shrink-0 no-print">
+          <aside className="hidden lg:flex flex-col w-64 bg-[#fafafa]/80 backdrop-blur-md border border-[#eaeaea] rounded-[28px] m-4 mr-2 shadow-sm h-[calc(100vh-2rem)] sticky top-4 justify-between flex-shrink-0 no-print">
             <div className="flex flex-col flex-1">
               {/* Logo block */}
               <div className="pt-8 pb-4 px-7 flex items-center">
@@ -396,8 +396,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="flex-1 flex flex-col m-4 ml-2 lg:m-4 lg:ml-2 overflow-hidden min-h-[calc(100vh-2rem)]">
             
             {/* Desktop Floating Top Header Capsule */}
-            {/* Desktop Floating Top Header Capsule */}
-            <header className="hidden lg:flex bg-[#fafafa] rounded-3xl h-[52px] items-center justify-between pl-[22px] pr-[26px] shadow-[0_2px_8px_rgba(0,0,0,0.03)] mb-6 flex-shrink-0 no-print">
+            <header className="hidden lg:flex bg-[#fafafa]/80 backdrop-blur-md rounded-3xl h-[52px] items-center justify-between pl-[22px] pr-[26px] shadow-[0_2px_8px_rgba(0,0,0,0.03)] mb-6 flex-shrink-0 no-print">
               {/* Left Section */}
               <div className="flex items-center gap-[11px]">
                 <button 
