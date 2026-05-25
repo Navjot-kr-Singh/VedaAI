@@ -26,6 +26,7 @@ import {
   Bell,
   ChevronDown,
   ArrowLeft,
+  FilePlus,
 } from 'lucide-react';
 import './globals.css';
 
@@ -436,24 +437,49 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
 
         {/* Floating Mobile Tab Bar Navigation (capsule at bottom) */}
-        <nav className="lg:hidden fixed bottom-6 left-6 right-6 z-40 bg-[#181818] text-white flex justify-around items-center px-6 py-3 rounded-full shadow-2xl border border-white/10 no-print">
+        <nav className="lg:hidden fixed bottom-6 left-6 right-6 z-40 bg-[#121212] text-white flex justify-around items-center px-4 py-3 rounded-[28px] shadow-2xl border border-white/5 no-print">
+          {/* Home */}
           <Link
             href="/"
-            className={`flex flex-col items-center gap-1 text-[10px] font-semibold ${
-              pathname === '/' || pathname.startsWith('/assignments') ? 'text-[#ed6c37]' : 'text-gray-400'
+            className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-all ${
+              pathname === '/' && !pathname.includes('/assignments') && !pathname.includes('/create') ? 'text-white' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            <FileText className="w-5 h-5" />
-            <span>Assignments</span>
+            <LayoutGrid className="w-[22px] h-[22px]" strokeWidth={2} />
+            <span className="mt-0.5">Home</span>
           </Link>
+
+          {/* Assignments */}
           <Link
-            href="/create"
-            className={`flex flex-col items-center gap-1 text-[10px] font-semibold ${
-              pathname.includes('/create') ? 'text-[#ed6c37]' : 'text-gray-400'
+            href="/"
+            className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-all ${
+              (pathname === '/' || pathname.startsWith('/assignments') || pathname.startsWith('/create')) ? 'text-white' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            <Sparkles className="w-5 h-5" />
-            <span>Create</span>
+            <FileText className="w-[22px] h-[22px]" strokeWidth={2} />
+            <span className="mt-0.5">Assignments</span>
+          </Link>
+
+          {/* Library */}
+          <Link
+            href="/"
+            className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-all ${
+              pathname === '/library' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+            }`}
+          >
+            <FilePlus className="w-[22px] h-[22px]" strokeWidth={2} />
+            <span className="mt-0.5">Library</span>
+          </Link>
+
+          {/* AI Toolkit */}
+          <Link
+            href="/toolkit"
+            className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-all ${
+              pathname === '/toolkit' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+            }`}
+          >
+            <Sparkles className="w-[22px] h-[22px]" strokeWidth={2} />
+            <span className="mt-0.5">AI Toolkit</span>
           </Link>
         </nav>
 
