@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # MongoDB Service
+  mongodb:
+    image: mongo:6.0
+    container_name: veda-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - veda-network
+
+  # Redis Service
+  redis:
+    image: redis:7-alpine
+    container_name: veda-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - veda-network
+
+  # Backend API Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: veda-backend
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    environment:
+      - PORT=4001
+      # Default to local mongodb container, but allow override via host environment
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017/vedaai}
+      # Default to local redis container, but allow override via host environment
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      # Pass through the Gemini API Key
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - NODE_ENV=${NODE_ENV:-production}
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - veda-network
+
+  # Frontend Next.js Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Client-side variables resolved by the browser at runtime
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:4001/api}
+        - NEXT_PUBLIC_SOCKET_URL=${NEXT_PUBLIC_SOCKET_URL:-http://localhost:4001}
+    container_name: veda-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - veda-network
+
+volumes:
+  mongo_data:
+  redis_data:
+
+networks:
+  veda-network:
+    driver: bridge
